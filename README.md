@@ -2,9 +2,9 @@
 
 TODO 
 
-[ ] Rebuild overlap checker, seems to have problems for lower side
-[ ] Move overlap to Pattern class
-[ ] rebuild propagation
+[ ] Rebuild overlap checker, seems to have problems for lower side<br>
+[ ] Move overlap to Pattern class<br>
+[ ] rebuild propagation<br>
 
 
 ## Translating images
