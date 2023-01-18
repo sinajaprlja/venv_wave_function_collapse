@@ -5,20 +5,20 @@ from tile import Tile
 
 class ImageTranslator(object):
     def __init__(self) -> None:
-        self.translation_map = []
         self.translated_image = []
-    
+        self.translation_map = []
+
     def __str__(self):
         result = "Translated Image"
         for line in self.translated_image:
             result = f"{result}\n"
             for value in line:
-                result = f"{result} {value:{len(str(len(self.translation_map)))}d}"
+                result = f"{result} {value:{len(str(Tile.index))}d}"
         return result
     
     @property
     def number_of_patterns(self):
-        return len(self.translation_map)
+        return Tile.index 
 
     def load(self) -> None:
         return self
@@ -40,14 +40,13 @@ class ImageTranslator(object):
                     tile.append([])
                     for j in range(tile_size):
                         tile[-1].append(image.getpixel((y * tile_size + j, x * tile_size + i)))          
+                
                 if not tile in self.translation_map:
                     self.translation_map.append(tile)
+
                 self.translated_image[-1].append(self.translation_map.index(tile))
         
-        tmp = []
-        for tile in self.translation_map:
-            tmp.append(Tile(tile))
-        self.translation_map = tmp
+        self.translation_map = list(map(lambda x: Tile(x), self.translation_map))
 
         return self
 

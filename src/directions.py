@@ -12,9 +12,9 @@ class Directions(enum.Enum):
     LEFT       = (-1,  0)
     UP_LEFT    = (-1, -1)
 
-    # Returns True when the pattern is completly inside the image -> edge cases are removed
-    def is_valid(self, pos, img_size, pattern_size):
-        if pos[0] + self.value[0] >= 0 and pos[0] + self.value[0] + pattern_size[0]< img_size[0]:
-            if pos[1] + self.value[1] >= 0 and pos[1] + self.value[1] + pattern_size[1] < img_size[1]:
+    # Returns True when the tile is inside the image -> edge cases are removed
+    def is_valid(self, pos, img_size):
+        if pos[0] + self.value[0] >= 0 and pos[0] + self.value[0] < img_size[0] - 1:
+            if pos[1] + self.value[1] >= 0 and pos[1] + self.value[1] < img_size[1] - 1:
                 return True
         return False
