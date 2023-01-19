@@ -2,8 +2,8 @@
 
 TODO 
 
-[ ] Rebuild overlap checker, seems to have problems for lower side<br>
-[ ] Move overlap to Pattern class<br>
+[X] Rebuild overlap checker, seems to have problems for lower side<br>
+[X] Move overlap to Pattern class<br>
 [ ] rebuild propagation<br>
 
 
