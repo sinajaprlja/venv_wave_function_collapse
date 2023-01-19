@@ -1,7 +1,23 @@
 #! /usr/bin/python3
 
 from PIL import Image
-from tile import Tile
+
+
+class Tile(object):
+    index = 0
+    def __init__(self, pixels: list):
+        self.pixels = pixels
+        self.index = Tile.index
+        Tile.index += 1
+
+    @property
+    def width(self) -> int:
+        return len(self.pixels[0])
+
+    @property
+    def height(self) -> int:
+        return len(self.pixels)
+
 
 class ImageTranslator(object):
     def __init__(self) -> None:
@@ -21,11 +37,11 @@ class ImageTranslator(object):
         return Tile.index 
 
     def load(self) -> None:
-        return self
+        raise NotImplementedError()
 
     def save(self) -> None:
-        return self
-        
+        raise NotImplementedError()
+
     def translate_image(self, image_path: str, tile_size: int) -> None:  
         image = Image.open(image_path)
         self.__init__()
