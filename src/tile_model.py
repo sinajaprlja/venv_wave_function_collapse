@@ -11,9 +11,12 @@ class Pattern(object):
         self.pixels = pixels
         self.probability = None
         self.weight = 1
+        self.width = len(pixels[0])
+        self.height = len(pixels)
         self.index = Pattern.index
         Pattern.index += 1
         
+
     def set_probability(self, probability: float):
         self.probability = probability
 
@@ -26,35 +29,40 @@ class Pattern(object):
     def __eq__(self, other):
         return self.pixels == other.pixels
     
-    def overlap_is_equal(self, other, direction):
-        pass
+    def overlaps(self, other, direction):
+        """
+        Checks if two patterns overlapping parts are equal.
+        The overlapping part is determined by the given direction(UP, UP_RIGHT, RIGHT, ...)
+        Returns true when all pixel values in the overlapping range are equal.
+        """
+        # Get row/column range depending on direction for own pixel matrix
+        range_row_self = range(1 if direction.value[1] == 1 else 0, self.width - 1 if direction.value[1] == -1 else self.width)
+        range_col_self = range(1 if direction.value[0] == 1 else 0, self.width - 1 if direction.value[0] == -1 else self.width)
+        
+        # Get row/column range depending on direction for other pixel matrix
+        range_row_other = range(1 if direction.value[1] == -1 else 0, self.width - 1 if direction.value[1] == 1 else self.width)
+        range_col_other = range(1 if direction.value[0] == -1 else 0, self.width - 1 if direction.value[0] == 1 else self.width)
+        
+        # Actual comparison, using the above ranges
+        for row_index in zip(range_row_self, range_row_other):
+            for col_index in zip(range_col_self, range_col_other):
+                if self.pixels[row_index[0]][col_index[0]] != other.pixels[row_index[1]][col_index[1]]:
+                    return False
+        return True
     
     def rotate(self):
         return Pattern(list(col[::-1] for col in zip(*self.pixels)))
+
+
 
 class TileModel(object):
     def __init__(self, translated_image: image_translator.ImageTranslator):
         self._translated_image = translated_image
         self.patterns = []
         self.rules = []
-    
-
-    def _is_overlap_equal(self, direction, pattern, questioned_pattern) -> bool:
-        """
-        Checks if two patterns overlapping parts are equal.
-        The overlapping part is determined by the given direction(UP, UP_RIGHT, RIGHT, ...)
-        Returns true when all pixel values in the overlapping range are equal.
-        """
-        for y in range(0, len(pattern)):
-            if y >= 0 and y < len(pattern) + direction.value[1]:
-                for x in range(0, len(pattern[0])):
-                    if x >= 0 and x < len(pattern[0]) + direction.value[0]:
-                        if pattern[y][x] != questioned_pattern[y - direction.value[1]][x - direction.value[0]]:
-                            return False
-        return True
 
 
-    def _get_pattern(self, pos, size):
+    def _get_pattern(self, pos: tuple, size: int) -> Pattern:
         """
         Returns a PatternObject containing a 2-dimensional list. Starting at <pos>
         from the top left corner, with width/height equal to <size>
@@ -68,11 +76,11 @@ class TileModel(object):
         return Pattern(pattern)
     
 
-    def build_patterns(self, pattern_size):
+    def build_patterns(self, pattern_size: int) -> None:
         """
         Get all possible patterns in the translated_image of size <pattern_size> and rotate
         them 90/180 and 270 degrees
-        Save the corresponding occurance probabilties to _probabilities
+        Save the corresponding occurance probabilties to probabilities
         Pattern and probabilty can be identified by their indicies
         """
         if pattern_size[0] <= 1 or pattern_size[1] <= 1:
@@ -95,7 +103,7 @@ class TileModel(object):
             pattern.set_probability(pattern.weight / weights)
 
 
-    def build_rules(self):
+    def build_rules(self) -> None:
         """
         builds the rules for generating new images by overlapping patterns 
         for every direction(UP, UP_RIGHT, RIGHT, ...) 
@@ -110,7 +118,7 @@ class TileModel(object):
             for direction in directions.Directions:
                 self.rules[-1][direction] = []
                 for questioned_pattern in self.patterns:
-                    if self._is_overlap_equal(direction, pattern.pixels, questioned_pattern.pixels):
+                    if pattern.overlaps(questioned_pattern, direction):
                         self.rules[-1][direction].append(self.patterns.index(questioned_pattern))
     
     def __str__(self):
