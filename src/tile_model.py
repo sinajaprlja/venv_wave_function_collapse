@@ -4,6 +4,7 @@
 import image_translator
 import directions
 
+from config import *
 
 class Pattern(object):
     index = 0
@@ -80,6 +81,18 @@ class TileModel(object):
                 pattern[-1].append(self._translated_image.translated_image[y + j][x + i])
         return Pattern(pattern)
     
+    def _add_pattern(self, pattern: Pattern) -> None:
+        """
+        Adds the pattern to the pattern_list when its not already in there,
+        else the patterns weight is just increased by 1
+        """
+        if not pattern in self.patterns:
+            self.patterns.append(pattern)
+        else:
+            for existing_pattern in self.patterns:
+                if pattern == existing_pattern:
+                    existing_pattern.weight += 1
+                    return
 
     def build_patterns(self, pattern_size: int) -> None:
         """
@@ -94,19 +107,18 @@ class TileModel(object):
         for y in range(len(image_map) - (pattern_size[1] - 1)):
             for x in range(len(image_map[y]) - (pattern_size[0] - 1)):
                 pattern = self._get_pattern((x, y), pattern_size)
+                
+                if ROTATE:
+                    for _ in range(4):
+                        pattern = pattern.rotate()
+                        self._add_pattern(pattern)            
+                else:
+                    self._add_pattern(pattern)            
 
-                for _ in range(4):
-                    pattern = pattern.rotate()
-                    
-                    if not pattern in self.patterns:
-                        self.patterns.append(pattern)
-                    else:
-                        pattern.weight += 1
-        
         weights = sum([pattern.weight for pattern in self.patterns])
         for pattern in self.patterns:
             pattern.set_probability(pattern.weight / weights)
-
+        
 
     def build_rules(self) -> None:
         """
