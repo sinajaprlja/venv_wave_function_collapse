@@ -61,6 +61,11 @@ class TileModel(object):
         self.patterns = []
         self.rules = []
 
+    def load(self):
+        raise NotImplementedError()
+
+    def save(self):
+        raise NotImplementedError()
 
     def _get_pattern(self, pos: tuple, size: int) -> Pattern:
         """
