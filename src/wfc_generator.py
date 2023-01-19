@@ -62,20 +62,26 @@ class WFCGenerator(object):
         """
         Returns the position with the smallest entropy
         """
-    
+        raise NotImplementedError()  
 
     def _get_maximum_probability(self, pos):
         """
         Returns the highest probabilty a pattern can have at given position
         """
+        raise NotImplementedError()  
 
     def _collapse(self, pos):
         """
         Collapse the tile at a specific position by taking the most probable patterns
         and randomly choose one.
         """
+        raise NotImplementedError()  
 
     def _propagate(self, pos, size):
+        """
+
+        """
+        raise NotImplementedError()  
 
     
         
@@ -83,6 +89,7 @@ class WFCGenerator(object):
         """
         Generate a new tile map of given size, the tilemap can be post processed to fill in corresponding patterns
         """
+        raise NotImplementedError()  
 
     def _init_output(self, size):
         """
