@@ -37,12 +37,12 @@ class Pattern(object):
         Returns true when all pixel values in the overlapping range are equal.
         """
         # Get row/column range depending on direction for own pixel matrix
-        range_row_self = range(1 if direction.value[1] == 1 else 0, self.width - 1 if direction.value[1] == -1 else self.width)
-        range_col_self = range(1 if direction.value[0] == 1 else 0, self.width - 1 if direction.value[0] == -1 else self.width)
+        range_row_self = range(1 if direction.value[0] == 1 else 0, self.width - 1 if direction.value[0] == -1 else self.width)
+        range_col_self = range(1 if direction.value[1] == 1 else 0, self.width - 1 if direction.value[1] == -1 else self.width)
         
         # Get row/column range depending on direction for other pixel matrix
-        range_row_other = range(1 if direction.value[1] == -1 else 0, self.width - 1 if direction.value[1] == 1 else self.width)
-        range_col_other = range(1 if direction.value[0] == -1 else 0, self.width - 1 if direction.value[0] == 1 else self.width)
+        range_row_other = range(1 if direction.value[0] == -1 else 0, self.width - 1 if direction.value[0] == 1 else self.width)
+        range_col_other = range(1 if direction.value[1] == -1 else 0, self.width - 1 if direction.value[1] == 1 else self.width)
         
         # Actual comparison, using the above ranges
         for row_index in zip(range_row_self, range_row_other):
