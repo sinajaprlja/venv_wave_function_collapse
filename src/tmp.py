@@ -3,24 +3,16 @@ import matplotlib
 import numpy as np
 import random
 import math
-import enum
 from typing import List
-
 pixels = [[255, 255, 255, 255], [255, 0, 0, 0], [255, 0, 138, 0], [255, 0, 0, 0]]
 input_size = (4, 4)
 output_size = (50, 50)
-
-plt.imshow(pixels, cmap="gray") # create plt
-print(pixels)
-plt.show()
-
 class Pattern:
     def __init__(self, pixels):
         self.pixels = pixels
 
     def __len__(self):
         return 1
-
 def get_all_rotations(pixelMatrix):
     """
     Return original array as well as rotated by 90, 180 and 270 degrees in the form of tuples
@@ -70,26 +62,15 @@ for pattern in patterns:
 patterns = [Pattern(p) for p in patterns]
 weights = {pattern:weights[pattern.pixels] for pattern in patterns}
 probability = {pattern:probability[pattern.pixels] for pattern in patterns}
-
-# show
-plt.figure(figsize=(10,10))
-for m in range(len(patterns)):
-    axs = plt.subplot(4, math.ceil(len(patterns)/4), m+1)
-    axs.imshow(patterns[m].pixels, cmap="gray", vmin=0, vmax=255)
-    axs.set_xticks([])
-    axs.set_yticks([])
-    plt.title("weight: %.0f prob: %.2f"%(weights[patterns[m]], probability[patterns[m]]))
-plt.show()
-
-class Directions(enum.Enum):
-    UP = (0, -1)
-    LEFT = (-1, 0)
-    DOWN = (0, 1)
-    RIGHT = (1, 0)
-    UP_LEFT = (-1, -1)
-    UP_RIGHT = (1, -1)
-    DOWN_LEFT = (-1, 1)
-    DOWN_RIGHT = (1, 1)
+UP = (0, -1)
+LEFT = (-1, 0)
+DOWN = (0, 1)
+RIGHT = (1, 0)
+UP_LEFT = (-1, -1)
+UP_RIGHT = (1, -1)
+DOWN_LEFT = (-1, 1)
+DOWN_RIGHT = (1, 1)
+dirs = [UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT]
 
 def valid_dirs(pos):
     x, y = pos
@@ -97,60 +78,58 @@ def valid_dirs(pos):
     valid_directions = []
 
     if x == 0:
-        valid_directions.extend([Directions.RIGHT])
+        valid_directions.extend([RIGHT])
         if y == 0:
-            valid_directions.extend([Directions.DOWN, Directions.DOWN_RIGHT])
+            valid_directions.extend([DOWN, DOWN_RIGHT])
         elif y == output_size[1]-1:
-            valid_directions.extend([Directions.UP, Directions.UP_RIGHT])
+            valid_directions.extend([UP, UP_RIGHT])
         else:
-            valid_directions.extend([Directions.DOWN, Directions.DOWN_RIGHT, Directions.UP, Directions.UP_RIGHT])
+            valid_directions.extend([DOWN, DOWN_RIGHT, UP, UP_RIGHT])
     elif x == output_size[0]-1:
-        valid_directions.extend([Directions.LEFT])
+        valid_directions.extend([LEFT])
         if y == 0:
-            valid_directions.extend([Directions.DOWN, Directions.DOWN_LEFT])
+            valid_directions.extend([DOWN, DOWN_LEFT])
         elif y == output_size[1]-1:
-            valid_directions.extend([Directions.UP, Directions.UP_LEFT])
+            valid_directions.extend([UP, UP_LEFT])
         else:
-            valid_directions.extend([Directions.DOWN, Directions.DOWN_LEFT, Directions.UP, Directions.UP_LEFT])
+            valid_directions.extend([DOWN, DOWN_LEFT, UP, UP_LEFT])
     else:
-        valid_directions.extend([Directions.LEFT, Directions.RIGHT])
+        valid_directions.extend([LEFT, RIGHT])
         if y == 0:
-            valid_directions.extend([Directions.DOWN, Directions.DOWN_LEFT, Directions.DOWN_RIGHT])
+            valid_directions.extend([DOWN, DOWN_LEFT, DOWN_RIGHT])
         elif y == output_size[1]-1:
-            valid_directions.extend([Directions.UP, Directions.UP_LEFT, Directions.UP_RIGHT])
+            valid_directions.extend([UP, UP_LEFT, UP_RIGHT])
         else:
-            valid_directions.extend([Directions.UP, Directions.UP_LEFT, Directions.UP_RIGHT, Directions.DOWN, Directions.DOWN_LEFT, Directions.DOWN_RIGHT])
+            valid_directions.extend([UP, UP_LEFT, UP_RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT])
 
     return valid_directions
-
 class Index:
     """
     Tells which combinations of patterns are allowed for all patterns
-    
+
     data (dict):
         pattern -> posible_connections (dict):
                     relative_position -> patterns (list)
     """
-    
+
     def __init__(self, patterns: List[Pattern]):
         self.data = {}
         for pattern in patterns:
             self.data[pattern] = {}
-            for d in Directions: 
+            for d in dirs:
                 self.data[pattern][d] = []
-    
+
     def add_rule(self, pattern: Pattern, relative_position: tuple, next_pattern: Pattern):
         self.data[pattern][relative_position].append(next_pattern)
-        
-        
+
+
     def check_possibility(self, pattern: Pattern, check_pattern: Pattern, relative_pos: tuple):
         if isinstance(pattern, list):
             pattern = pattern[0]
-            
+
         return check_pattern in self.data[pattern][relative_pos]
 
 index = Index(patterns)
-
 def get_offset_tiles(pattern: Pattern, offset: tuple):
     if offset == (0, 0):
         return pattern.pixels
@@ -174,30 +153,15 @@ def get_offset_tiles(pattern: Pattern, offset: tuple):
 # Generate rules for Index and save them
 rules_num = 0
 for pattern in patterns:
-    for d in Directions:
+    for d in dirs:
         for pattern_next in patterns:
-            # here's checking all offsets 
-            overlap = get_offset_tiles(pattern_next, d.value)
-            og_dir = tuple([d.value[0]*-1, d.value[1]*-1])
+            # here's checking all offsets
+            overlap = get_offset_tiles(pattern_next, d)
+            og_dir = tuple([d[0]*-1, d[1]*-1])
             part_of_og_pattern = get_offset_tiles(pattern, og_dir)
             if (overlap) == (part_of_og_pattern):
                 index.add_rule(pattern, d, pattern_next)
                 rules_num+=1
-
-
-
-# Show data in Index
-print(f"There are {rules_num} rules")
-
-s = 0
-for d in index.data:
-    print(f'Pattern {d.pixels}')
-    for pos in index.data[d]:
-        print(f' Pos {pos}')
-        s += len(index.data[d][pos])
-        for pattern in index.data[d][pos]:
-            print(f' {pattern.pixels}')
-print(s)
 
 def initialize_wave_function(size):
     """
@@ -205,9 +169,9 @@ def initialize_wave_function(size):
     Coefficients describe what patterns can occur in each tile. At the beggining, at every possition there is full set
     of patterns available
     """
-    
+
     coefficients = []
-    
+
     for col in range(size[0]):
         row = []
         for r in range(size[1]):
@@ -216,6 +180,7 @@ def initialize_wave_function(size):
     return coefficients
 
 coefficients = initialize_wave_function(output_size)
+
 def is_fully_collapsed():
     """
     Check if wave function is fully collapsed meaning that for each tile available is only one pattern
@@ -240,33 +205,32 @@ def get_shannon_entropy(position):
     """
     x, y = position
     entropy = 0
-    
+
     # A cell with one valid pattern has 0 entropy
     if len(coefficients[x][y]) == 1:
         return 0
-    
+
     for pattern in coefficients[x][y]:
         entropy += probability[pattern] * math.log(probability[pattern], 2)
     entropy *= -1
-    
+
     # Add noise to break ties and near-ties
     entropy -= random.uniform(0, 0.1)
     return entropy
-
 def get_min_entropy_pos():
     """
     Return position of tile with the lowest entropy
     """
     minEntropy = None
     minEntropyPos = None
-    
+
     for x, col in enumerate(coefficients):
         for y, row in enumerate(col):
             entropy = get_shannon_entropy((x, y))
-            
+
             if entropy == 0:
                 continue
-            
+
             if minEntropy is None or entropy < minEntropy:
                 minEntropy = entropy
                 minEntropyPos = (x, y)
@@ -296,6 +260,7 @@ def observe():
     coefficients[min_entropy_pos[0]][min_entropy_pos[1]] = semi_random_pattern
 
     return min_entropy_pos
+
 def propagate(min_entropy_pos):
     stack = [min_entropy_pos]
 
@@ -331,6 +296,7 @@ def propagate(min_entropy_pos):
 
                     if adjacent_pos not in stack:
                         stack.append(adjacent_pos)
+
 while not is_fully_collapsed():
     min_entropy_pos = observe()
     propagate(min_entropy_pos)
