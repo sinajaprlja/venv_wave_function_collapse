@@ -25,3 +25,9 @@ class Directions(enum.Enum):
             if pos[1] + self.value[1] >= 0 and pos[1] + self.value[1] < img_size[1] - 1:
                 return True
         return False
+
+    def negate(self):
+        """
+        Returns the direction pointing in the exact opposite direction of <self>
+        """
+        return [direction for direction in Directions if direction.value[0] == -self.value[0] and direction.value[1] == -self.value[1]][0]
