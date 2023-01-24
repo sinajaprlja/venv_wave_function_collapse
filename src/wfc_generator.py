@@ -39,8 +39,6 @@ class WFCGenerator(object):
             for tile in column:
                 if len(tile) > 1:
                     return False
-                if len(tile) == 0:
-                    raise UnsolvableException()
         return True
 
 
@@ -95,7 +93,7 @@ class WFCGenerator(object):
         Pattern probability is constant for same input
         """
         maximum_probability = 0
-        for pattern in self.ouput[pos[0]][pos[1]]:
+        for pattern in self.output[pos[0]][pos[1]]:
             if probability := pattern.probability > maximum_probability:
                 maximum_probability = probability
         return probability
@@ -105,22 +103,53 @@ class WFCGenerator(object):
         Collapse the tile at a specific position by taking the most probable patterns
         and randomly choose one.
         """
-        raise NotImplementedError()  
+        maximum_probability = self._get_maximum_probability(pos)
+        maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
+        self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
 
-    def _propagate(self, pos, size):
+    def _propagate(self, start: tuple, size: tuple):
         """
-
         """
-        raise NotImplementedError()  
+        stack = [start]
+        while stack:
+            print(stack)
+            pos = stack.pop()
+            patterns = self.output[pos[0]][pos[1]]
+            if len(patterns) == 0:
+                raise Exception
+            
+            for direction in directions.Directions:
+                if direction.is_valid(pos, size):
+                    adjacent_pos = (pos[0] + direction.value[0], pos[1] + direction.value[1])
+                    tmp = []
+                    for adjacent_pattern in self.output[adjacent_pos[0]][adjacent_pos[1]]:
+                        for pattern in patterns:
+                            if pattern in self._tile_model.rules[adjacent_pattern][direction.negate()]:
+                                if not adjacent_pattern in tmp:
+                                    tmp.append(adjacent_pattern)
+                    
+                    if len(tmp) != len(self.output[adjacent_pos[0]][adjacent_pos[1]]):
+                        if not adjacent_pos in stack:
+                            stack.append(adjacent_pos)
+                    self.output[adjacent_pos[0]][adjacent_pos[1]] = tmp
+                        
+                
 
-    
-        
     def generate_map(self, size):
         """
         Generate a new tile map of given size, the tilemap can be post processed to fill in corresponding patterns
         """
         self._init_output(size)
-        self._get_minimum_entropy_position()
+
+        while True:
+            try:
+                while not self._is_fully_collapsed():
+                    minimum_entropy_position = self._get_minimum_entropy_position()
+                    self._collapse(minimum_entropy_position)
+                    self._propagate(minimum_entropy_position, size)
+            except Exception as e:
+                raise e
+                self._init_output(size)
 
     def _init_output(self, size):
         """
@@ -135,7 +164,7 @@ class WFCGenerator(object):
     def __str__(self):
         result = ""
         for line in self._output:
-            result = f"{result}{list(map(lambda x: 'n' if len(x) > 1 else x, line))}\n"
+            result = f"{result}{list(map(lambda x: '<>' if len(x) > 1 else '{:2d}'.format(x[0].index), line))}\n"
         return result
 
 if __name__ == "__main__":
@@ -148,6 +177,4 @@ if __name__ == "__main__":
 
     wfc = WFCGenerator(tm)
     wfc.generate_map((8, 8))
-    exit()
-    for line in wfc._output:
-        print(line)
+    print(wfc)
