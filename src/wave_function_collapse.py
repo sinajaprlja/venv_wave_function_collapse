@@ -1,12 +1,33 @@
 #! /usr/bin/python3
 
+import sys
 import math
+import time
 import random
 
 import image_translator
 import tile_model
 import directions
 
+def progressbar(progress, maximum, text_front='', text_back='', filler_main='#', filler_back='-', bar_lenght=50):
+    '''
+    *args
+        progress:---current value of process
+        maximum:----max value process can reach
+    **kwargs
+        text_front:-text in front of the progressbar (TEXT_FRONT[####     ])
+        text_back:--text behind the progressbar ([###     ]TEXT_BACK)
+        filler_main:-----char used in the progressbar ([####     ], [++++    ], [====    ], ...)
+        filler_back:-----char used as background-filler ([###-----], [###     ], ([###.....]), ...)
+        bar_lenght:-lenght of progressbar ([   <-"space between square brackets"->   ])
+    '''
+    percentage = round((progress / maximum) * bar_lenght)
+    inside = f"{percentage*filler_main}{(bar_lenght - percentage) * filler_back}"
+    output = "\r{}[{:{}s}]{}".format(text_front, inside, bar_lenght, text_back)
+    if progress >= maximum:
+        output = "\r{}[{:{}s}]{}\n".format(text_front, bar_lenght*filler_main, bar_lenght, text_back)
+    sys.stdout.write(output)
+    sys.stdout.flush()
 
 
 class UnsolvableException(Exception):
@@ -29,6 +50,15 @@ class WaveFunctionCollapse(object):
         if self._output is None:
             raise NotInitializedException("output")
         return self._output
+
+    @property
+    def number_of_collapsed_tiles(self):
+        s = 0
+        for row in self.output:
+            for cell in row:
+                if len(cell) == 1:
+                    s += 1
+        return s
 
 
     def _is_fully_collapsed(self) -> bool:
@@ -108,7 +138,8 @@ class WaveFunctionCollapse(object):
         """
         maximum_probability = self._get_maximum_probability(pos)
         maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
-        self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
+        #self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
+        self.output[pos[0]][pos[1]] = [random.choice(self.output[pos[0]][pos[1]])]
         self.output[pos[0]][pos[1]][0].collapsed = True
 
     def _propagate(self, start: tuple, size: tuple):
@@ -155,8 +186,10 @@ class WaveFunctionCollapse(object):
         Do so by collapsing and propagating(next()-method) until the map is completly collapsed
         """
         self._init_output(size)
+        start = time.time()
         while not self._is_fully_collapsed():
             self.next(size)
+            progressbar(self.number_of_collapsed_tiles, size[0]*size[1], bar_lenght=100, text_back=f" {time.time()-start:.2f} sec")
 
 
     def _init_output(self, size):
@@ -181,13 +214,20 @@ class WaveFunctionCollapse(object):
         return result
 
 if __name__ == "__main__":
+    filename = "../resources/images/example4x4.png"
+
     it = image_translator.ImageTranslator()
-    it.breakdown_image("../resources/images/example4x4.png", 1)
+    it.breakdown_image(filename, 1)
 
     tm = tile_model.TileModel(it)
     tm.build_patterns((2, 2))
     tm.build_rules()
 
     wfc = WaveFunctionCollapse(tm)
-    wfc.generate_map((8, 8))
-    print(wfc)
+    
+    for i in range(4):
+        wfc.generate_map((32, 32))
+
+        reversed_map = tm.reverse_patterns(wfc.output)
+
+        rebuild_image = it.rebuild_image(reversed_map, f"{filename[:-3]}result{i}.png")

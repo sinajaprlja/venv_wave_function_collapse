@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
 from PIL import Image
-
+import numpy as np
 
 class Tile(object):
     index = 0
@@ -11,11 +11,7 @@ class Tile(object):
         Tile.index += 1
 
     @property
-    def width(self) -> int:
-        return len(self.pixels[0])
-
-    @property
-    def height(self) -> int:
+    def size(self) -> int:
         return len(self.pixels)
 
 
@@ -63,8 +59,26 @@ class ImageTranslator(object):
                 self.translated_image[-1].append(self.translation_map.index(tile))
         
         self.translation_map = list(map(lambda x: Tile(x), self.translation_map))
-
         return self
+
+    
+    def rebuild_image(self, bitmap: list, filename: str) -> list:
+        result = []
+        for _ in range(len(bitmap) * self.translation_map[0].size):
+            result.append([])
+            for _ in range(len(bitmap[0]) * self.translation_map[0].size):
+                result[-1].append([])
+
+        for bitmap_row_index, bitmap_row in enumerate(bitmap):
+            for bitmap_col_index, tile in enumerate(bitmap_row):
+                for tile_row_index, tile_row in enumerate(self.translation_map[tile].pixels):
+                    for tile_col_index, pixel in enumerate(tile_row):
+                        result[bitmap_row_index * self.translation_map[0].size+ tile_row_index][bitmap_col_index *  self.translation_map[0].size + tile_col_index] = pixel
+        
+        img = Image.fromarray(np.asarray(result, dtype=np.uint8))
+        img.save(filename)
+        return result
+    
 
 if __name__ == "__main__":
     it = ImageTranslator()

@@ -139,19 +139,20 @@ class TileModel(object):
                     if pattern.overlaps(questioned_pattern, direction):
                         self.rules[pattern][direction].append(questioned_pattern)
     
+    
     def reverse_patterns(self, bitmap: list) -> list:
         result = []
-        for _ in range(len(bitmap) * bitmap[0][0].height): 
+        for _ in range(len(bitmap) * bitmap[0][0][0].height): 
             result.append([])
-            for _ in range(len(bitmap[0]) * bitmap[0][0].width):
+            for _ in range(len(bitmap[0]) * bitmap[0][0][0].width):
                 result[-1].append([])
         
         for bitmap_row_index, bitmap_row in enumerate(bitmap):
             for bitmap_col_index, pattern in enumerate(bitmap_row):
-                for pattern_row_index, pattern_row in enumerate(pattern.pixels):
+                for pattern_row_index, pattern_row in enumerate(pattern[0].pixels):
                     for pattern_col_index, pixel in enumerate(pattern_row):
-                        result[bitmap_row_index * bitmap[0][0].height + pattern_row_index][bitmap_col_index * bitmap[0][0].width + pattern_col_index] = pixel
-        
+                        result[bitmap_row_index * bitmap[0][0][0].height + pattern_row_index][bitmap_col_index * bitmap[0][0][0].width + pattern_col_index] = pixel
+        return result    
 
 
     def __str__(self):
