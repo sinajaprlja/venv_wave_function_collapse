@@ -42,7 +42,7 @@ class ImageTranslator(object):
     def save(self) -> None:
         raise NotImplementedError()
 
-    def translate_image(self, image_path: str, tile_size: int) -> None:  
+    def breakdown_image(self, image_path: str, tile_size: int) -> None:  
         image = Image.open(image_path)
         self.__init__()
         if image.width / tile_size != image.width // tile_size and image.height / tile_size != image.height // tile_size:
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         ["../resources/images/river64x64.png", 1]
     ]
     
-    it.translate_image(*images[0]).save()
+    it.breakdown_image(*images[0]).save()
 
     print(it)
     

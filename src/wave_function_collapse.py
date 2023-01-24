@@ -19,7 +19,7 @@ class NotInitializedException(Exception):
 
 
 
-class WFCGenerator(object):
+class WaveFunctionCollapse(object):
     def __init__(self, tile_model: tile_model.TileModel):
         self._tile_model = tile_model
         self._output = None
@@ -35,7 +35,7 @@ class WFCGenerator(object):
         """
         Returns true when the algorithm finished and produced a valid output
         """
-        for column in self._output:
+        for column in self.output:
             for tile in column:
                 if len(tile) > 1:
                     return False
@@ -133,34 +133,35 @@ class WFCGenerator(object):
                     self.output[adjacent_pos[0]][adjacent_pos[1]] = tmp 
                         
                 
+    def next(self, size):
+        """
+        Builds the next step of the output by collapsing and propagating threw every change
+        """
+        solution = []
+        try:
+            if not self._is_fully_collapsed():
+                minimum_entropy_position = self._get_minimum_entropy_position()
+                self._collapse(minimum_entropy_position)
+                self._propagate(minimum_entropy_position, size)
+        except UnsolvableException as e:
+            self._init_output(size)
+
+        except Exception as e:
+            raise e
 
     def generate_map(self, size):
         """
-        Generate a new tile map of given size, the tilemap can be post processed to fill in corresponding patterns
+        Generate a new bitmap accordingly to the ruleset of tile_model at given size.
+        Do so by collapsing and propagating(next()-method) until the map is completly collapsed
         """
         self._init_output(size)
+        while not self._is_fully_collapsed():
+            self.next(size)
 
-        attempts = 0
-        while True:
-            attempts += 1
-            solution = []
-            try:
-                while not self._is_fully_collapsed():
-                    minimum_entropy_position = self._get_minimum_entropy_position()
-                    self._collapse(minimum_entropy_position)
-                    self._propagate(minimum_entropy_position, size)
-                    print(self)
-            except UnsolvableException as e:
-                s = [(row, col) for row, line in enumerate(self.output) for col, cell in enumerate(line) if len(cell) == 0]
-                print(f"Try again, current attempt: {attempts}\nFailed tiles: {s}")
-                self._init_output(size)
-
-            except Exception as e:
-                raise e
 
     def _init_output(self, size):
         """
-        Initilaize output map where every tile contains every possible pattern
+        Initialize output map where every tile contains every possible pattern
         """
         self._output = []
         for y in range(size[1]):
@@ -181,12 +182,12 @@ class WFCGenerator(object):
 
 if __name__ == "__main__":
     it = image_translator.ImageTranslator()
-    it.translate_image("../resources/images/example4x4.png", 1)
-    
+    it.breakdown_image("../resources/images/example4x4.png", 1)
+
     tm = tile_model.TileModel(it)
     tm.build_patterns((2, 2))
     tm.build_rules()
 
-    wfc = WFCGenerator(tm)
+    wfc = WaveFunctionCollapse(tm)
     wfc.generate_map((8, 8))
-    print(wfc._output)
+    print(wfc)
