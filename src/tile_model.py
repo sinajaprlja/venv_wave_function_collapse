@@ -14,13 +14,11 @@ class Pattern(object):
         self.weight = 1
         self.width = len(pixels[0])
         self.height = len(pixels)
-    
+        self.collapsed = False
+
     def set_probability(self, probability: float):
         self.probability = probability
 
-    def __len__(self):
-        return 1
-    
     def __str__(self):
         return str(self.index)
     
