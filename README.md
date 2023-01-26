@@ -4,7 +4,9 @@ TODO
 
 [X] Rebuild overlap checker, seems to have problems for lower side<br>
 [X] Move overlap to Pattern class<br>
-[ ] rebuild propagation<br>
+[X] rebuild propagation<br>
+[ ] Add all the debug messages 
+[ ] Better commenting inside the code
 
 
 ## Translating images
