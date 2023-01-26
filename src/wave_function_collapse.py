@@ -1,5 +1,7 @@
 #! /usr/bin/python3
 
+# @author Lukas Grünwald
+
 import sys
 import math
 import time
@@ -225,9 +227,9 @@ class WaveFunctionCollapse(object):
         """
         utils.verbose(f"Intializing blank output of size {size}x{size}", 2)
         self._output = []
-        for y in range(size[1]):
+        for y in range(size[0]):
             self._output.append([])
-            for x in range(size[0]):
+            for x in range(size[1]):
                 self._output[-1].append(self._tile_model.patterns)
     
     def __str__(self):
@@ -246,7 +248,7 @@ if __name__ == "__main__":
         "../resources/images/example4x4.png",
         "../resources/images/river32x32.png",    
     ]
-    filename = filenames[1]
+    filename = filenames[0]
 
     it = image_translator.ImageTranslator()
     it.breakdown_image(filename, 1)
@@ -258,7 +260,7 @@ if __name__ == "__main__":
     wfc = WaveFunctionCollapse(tm)
     
     for i in range(1):
-        wfc.generate_map((16, 16))
+        wfc.generate_map((32, 16))
 
         reversed_map = tm.reverse_patterns(wfc.output)
 

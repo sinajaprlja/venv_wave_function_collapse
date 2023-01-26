@@ -103,7 +103,7 @@ class TileModel(object):
         them 90/180 and 270 degrees when option ROTATE is enabled
         Save the corresponding occurance probabilties to as soon as all distinct patterns have been found
         """
-        utils.verbose("Breakdown bitmap into {pattern_size}-sized patterns", 1)
+        utils.verbose(f"Breakdown bitmap into {pattern_size}-sized patterns", 1)
         if pattern_size[0] <= 1 or pattern_size[1] <= 1:
             raise ValueError(f"pattern_size must be at least 2x2, got {pattern_size[0]}x{pattern_size[1]}")
         image_map = self._translated_image.translated_image
