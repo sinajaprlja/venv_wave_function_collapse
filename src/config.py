@@ -8,8 +8,8 @@ ROTATE = True
 # A little noise is added to entropy for a more natural distribution of patterns, default=0.01
 ENTROPY_NOISE = 0.01
 
-# When set to True only choose between patterns with the maximum preobability during collapse
-USE_MAX_PROBABILITY = True
+# When set to True only choose between patterns with the maximum probability during collapse
+USE_MAX_PROBABILITY = False
 
 # Maximum Number of tries the algorithm gets before terminating
 MAX_TRIES = 3
