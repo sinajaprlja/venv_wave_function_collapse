@@ -8,6 +8,8 @@ import random
 import image_translator
 import tile_model
 import directions
+import config
+import utils
 
 def progressbar(progress, maximum, text_front='', text_back='', filler_main='#', filler_back='-', bar_lenght=50):
     '''
@@ -31,8 +33,10 @@ def progressbar(progress, maximum, text_front='', text_back='', filler_main='#',
 
 
 class UnsolvableException(Exception):
-    def __init__(self):
-        super().__init__("At least one tile exists that has no matching pattern")
+    def __init__(self, msg=""):
+        if msg != "":
+            msg = f"{msg}. "
+        super().__init__("{msg}At least one tile exists that has no matching pattern")
 
 class NotInitializedException(Exception):
     def __init__(self, msg="unknown"):
@@ -65,10 +69,13 @@ class WaveFunctionCollapse(object):
         """
         Returns true when the algorithm finished and produced a valid output
         """
+        utils.verbose(f"Checking if the map has completly collapsed", 3)
         for column in self.output:
             for tile in column:
                 if len(tile) > 1:
                     return False
+                elif len(tile) == 0:
+                    raise UnsolvableException()
         return True
 
 
@@ -78,15 +85,15 @@ class WaveFunctionCollapse(object):
         """
         patterns = self._output[pos[0]][pos[1]]
         if patterns == []:
-            raise ValueError(f"no possible patterns at {pos}")
+            raise UnsolvableException(f"No possible patterns at {pos}")
         return patterns
 
     def _get_shannon_entropy(self, pos: tuple) -> float:
         """
         Calculate the shannon entropy at a specific position
         Tiles with only one pattern available have 0 entropy
-
         """
+        utils.verbose(f"Calculate entropy at {pos}", 3)
         entropy = 0
         if len(self.output[pos[0]][pos[1]]) == 1 and self.output[pos[0]][pos[1]][0].collapsed:
             return 9999
@@ -99,7 +106,7 @@ class WaveFunctionCollapse(object):
         entropy *= -1
 
         # Add some random noise for more natural distribution of collapse
-        entropy -= random.uniform(0, 0.1)
+        entropy -= random.uniform(0, config.ENTROPY_NOISE)
         return entropy
     
 
@@ -110,6 +117,7 @@ class WaveFunctionCollapse(object):
         ! There will be minor differences when entropy table is printed afterwards because        !
         ! of adding a little random offset to every value for a more natural generating algorithm !
         """
+        utils.verbose(f"Calculating position with least entropy", 3)
         minimum_entropy = self._get_shannon_entropy((0, 0))
         minimum_entropy_position = (0, 0)
         for row in range(len(self.output)):
@@ -125,6 +133,7 @@ class WaveFunctionCollapse(object):
         over every element and overwriting the the maximum element when bigger element has been found.
         Pattern probability is constant for same input
         """
+        utils.verbose(f"Calculating maximum probability at {pos}", 3)
         maximum_probability = 0
         for pattern in self.output[pos[0]][pos[1]]:
             if (probability := pattern.probability) > maximum_probability:
@@ -136,15 +145,19 @@ class WaveFunctionCollapse(object):
         Collapse the tile at a specific position by taking the most probable patterns
         and randomly choose one.
         """
-        maximum_probability = self._get_maximum_probability(pos)
-        maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
-        #self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
-        self.output[pos[0]][pos[1]] = [random.choice(self.output[pos[0]][pos[1]])]
+        utils.verbose(f"Collapsing {pos}", 3)
+        if config.USE_MAX_PROBABILITY:
+            maximum_probability = self._get_maximum_probability(pos)
+            maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
+            self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
+        else:
+            self.output[pos[0]][pos[1]] = [random.choice(self.output[pos[0]][pos[1]])]
         self.output[pos[0]][pos[1]][0].collapsed = True
 
     def _propagate(self, start: tuple, size: tuple):
         """
         """
+        utils.verbose(f"Start propagation from {start}", 3)
         stack = [start]
         while stack:
             pos = stack.pop()
@@ -164,10 +177,11 @@ class WaveFunctionCollapse(object):
                     self.output[adjacent_pos[0]][adjacent_pos[1]] = tmp 
                         
                 
-    def next(self, size):
+    def next(self, size: int) -> None:
         """
         Builds the next step of the output by collapsing and propagating threw every change
         """
+        utils.verbose("Starting iteration of collapsing/propagating", 2)
         solution = []
         try:
             if not self._is_fully_collapsed():
@@ -180,22 +194,36 @@ class WaveFunctionCollapse(object):
         except Exception as e:
             raise e
 
-    def generate_map(self, size):
+    def generate_map(self, size: int) -> bool:
         """
         Generate a new bitmap accordingly to the ruleset of tile_model at given size.
         Do so by collapsing and propagating(next()-method) until the map is completly collapsed
+        Returns True when bitmap has successfully been created, False otherwiese.
         """
+        utils.verbose("Starting wave_function_collapse algortihm", 2)
         self._init_output(size)
         start = time.time()
-        while not self._is_fully_collapsed():
-            self.next(size)
-            progressbar(self.number_of_collapsed_tiles, size[0]*size[1], bar_lenght=100, text_back=f" {time.time()-start:.2f} sec")
+        tries = 0
+        while tries < config.MAX_TRIES:
+            try:
+                while not self._is_fully_collapsed():
+                    self.next(size)
+                    if config.DEBUG_LEVEL >= 1:
+                        progressbar(self.number_of_collapsed_tiles, size[0]*size[1], bar_lenght=100, text_back=f" {time.time()-start:.2f} sec")
+                return True
+            except UnsolvableException as e:       
+                tries += 1
+                print(f"\n{utils.timestring()} Unsolvable, try again [{tries}/{config.MAX_TRIES}]\n")
+                self._init_output(size)
+            except Exception as e:
+                raise e 
+        return False    
 
-
-    def _init_output(self, size):
+    def _init_output(self, size: int) -> None:
         """
         Initialize output map where every tile contains every possible pattern
         """
+        utils.verbose(f"Intializing blank output of size {size}x{size}", 2)
         self._output = []
         for y in range(size[1]):
             self._output.append([])
@@ -214,7 +242,11 @@ class WaveFunctionCollapse(object):
         return result
 
 if __name__ == "__main__":
-    filename = "../resources/images/example4x4.png"
+    filenames = [
+        "../resources/images/example4x4.png",
+        "../resources/images/river32x32.png",    
+    ]
+    filename = filenames[1]
 
     it = image_translator.ImageTranslator()
     it.breakdown_image(filename, 1)
@@ -225,8 +257,8 @@ if __name__ == "__main__":
 
     wfc = WaveFunctionCollapse(tm)
     
-    for i in range(4):
-        wfc.generate_map((32, 32))
+    for i in range(1):
+        wfc.generate_map((16, 16))
 
         reversed_map = tm.reverse_patterns(wfc.output)
 

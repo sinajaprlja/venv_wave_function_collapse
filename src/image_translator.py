@@ -3,6 +3,8 @@
 from PIL import Image
 import numpy as np
 
+import utils
+
 class Tile(object):
     index = 0
     def __init__(self, pixels: list):
@@ -13,6 +15,13 @@ class Tile(object):
     @property
     def size(self) -> int:
         return len(self.pixels)
+    
+    def __str__(self):
+        s = str(index)
+        for line in pixels:
+            s = f"{s}\n{line}"
+        return s
+
 
 
 class ImageTranslator(object):
@@ -39,6 +48,7 @@ class ImageTranslator(object):
         raise NotImplementedError()
 
     def breakdown_image(self, image_path: str, tile_size: int) -> None:  
+        utils.verbose(f"breaking down {image_path} into tiles of size {tile_size}", 1)
         image = Image.open(image_path)
         self.__init__()
         if image.width / tile_size != image.width // tile_size and image.height / tile_size != image.height // tile_size:
@@ -59,10 +69,13 @@ class ImageTranslator(object):
                 self.translated_image[-1].append(self.translation_map.index(tile))
         
         self.translation_map = list(map(lambda x: Tile(x), self.translation_map))
+        utils.verbose(f"Brokedown image into {len(self.translation_map)} different tiles", 1)
+        utils.verbose(self, 3)
         return self
 
     
     def rebuild_image(self, bitmap: list, filename: str) -> list:
+        utils.verbose(f"Rebuilding image from bitmap and saving it to {filename}", 1)
         result = []
         for _ in range(len(bitmap) * self.translation_map[0].size):
             result.append([])
@@ -77,6 +90,7 @@ class ImageTranslator(object):
         
         img = Image.fromarray(np.asarray(result, dtype=np.uint8))
         img.save(filename)
+        utils.verbose(f"Successfully save rebuild image to {filename}", 1)
         return result
     
 

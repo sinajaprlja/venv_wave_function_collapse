@@ -3,6 +3,7 @@
 
 import image_translator
 import directions
+import utils
 
 from config import *
 
@@ -102,6 +103,7 @@ class TileModel(object):
         them 90/180 and 270 degrees when option ROTATE is enabled
         Save the corresponding occurance probabilties to as soon as all distinct patterns have been found
         """
+        utils.verbose("Breakdown bitmap into {pattern_size}-sized patterns", 1)
         if pattern_size[0] <= 1 or pattern_size[1] <= 1:
             raise ValueError(f"pattern_size must be at least 2x2, got {pattern_size[0]}x{pattern_size[1]}")
         image_map = self._translated_image.translated_image
@@ -120,6 +122,8 @@ class TileModel(object):
         for index, pattern in enumerate(self.patterns):
             pattern.set_probability(pattern.weight / weights)
             pattern.index = index
+            Pattern.index = index
+        utils.verbose(f"Brokedown bitmap into {Pattern.index + 1} patterns of size {pattern_size}", 1)
 
     def build_rules(self) -> None:
         """
@@ -138,7 +142,7 @@ class TileModel(object):
                 for questioned_pattern in self.patterns:
                     if pattern.overlaps(questioned_pattern, direction):
                         self.rules[pattern][direction].append(questioned_pattern)
-    
+        utils.verbose(f"Build {len(self)} rules", 1) 
     
     def reverse_patterns(self, bitmap: list) -> list:
         result = []
