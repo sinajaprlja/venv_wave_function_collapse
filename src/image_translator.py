@@ -5,10 +5,29 @@ import numpy as np
 
 import utils
 
+
+
+class DimensionException(Exception):
+    def __init__(self, msg=""):
+        super().__init__(msg)    
+
+
+
 class Tile(object):
+    """
+    Class representing a little image called a tile.
+    Image data is saved as Pixelgrid in Tile.pixels
+    Every Tile thats created receives an individual index.
+    Tiles are are always quadratic, which means "height == width"
+    ! Tiles with equal pixeldata can have different indicies when created seperatly !
+    """
+    
+    #  
     index = 0
+    
     def __init__(self, pixels: list):
         self.pixels = pixels
+        self._check_size()
         self.index = Tile.index
         Tile.index += 1
 
@@ -16,6 +35,10 @@ class Tile(object):
     def size(self) -> int:
         return len(self.pixels)
     
+    def _check_size(self):
+        if len(self.pixels) != len(awldf.pixels[0]):
+            raise DimesionException("Tile has wrong dimension, width and height atr expected to be equal - got ({len(self.pixels)}|{self.pixels[0]})")
+
     def __str__(self):
         s = str(index)
         for line in pixels:
