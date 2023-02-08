@@ -7,13 +7,13 @@ TODO
 [X] rebuild propagation<br>
 [ ] Add all the debug messages<br> 
 [ ] Better commenting inside the code<br>
-
+[ ] Make tilemodels with 1x1 patterns <br>
 
 ## Translating images
 Images can be translated using the following code<br>
 
 ```python
-from image_translator import ImageTranslator
+from image_translator import ImageTranslator, TranslatedImage
 
 # Initialize ImageTranslator
 translator = ImageTranslator()
@@ -21,22 +21,23 @@ translator = ImageTranslator()
 # Translate image
 image_path = "PATH_TO_IMAGE_FILE"
 tile_size = TILE_SIZE
-translator.translate_image(image_path: str, tile_size: int)
+translated_image = translator.translate_image(image_path: str, tile_size: int)
 
-# Access data
-translated_image = translator.translated_image
-translation_map = translator.translation_map
+# The translated tiles can be found in
+tiles = translated_image.tile_map
+
+# The translated image can be found in
+image = translated_image.bitmap
 ```
 
 TILE\_SIZE
 > Tiles are quadratic patterns, size is an integer, representing width/height in pixels.
 
-translated\_image
+image
 > The translated image is made of a 2-dimensional matrix containing integers, every integer corresponds to
 > a specific pattern at the elements location
 
-
-translation\_map
+tiles
 > The translation map is a list containing all found patterns in the original image, the pattern index
 > corresponds to the integer in the "translated\_image"-matrix
 
