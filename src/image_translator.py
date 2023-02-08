@@ -60,10 +60,10 @@ class TranslatedImage(object):
             data = pickle.load(file)
             self.tile_map, self.bitmap = data
 
-    def save(self, translated_image: TranslatedImage, filename: str) -> None:
+    def save(self, filename: str) -> None:
         utils.verbose(f"Saving translation data to '{filename}.imd'", 1)
         with open(f"{filename}.imd", "wb") as file:
-            pickle.dump([translated_image.tile_map, translated_image.bitmap], file, pickle.HIGHEST_PROTOCOL)
+            pickle.dump([self.tile_map, self.bitmap], file, pickle.HIGHEST_PROTOCOL)
 
 
 class ImageTranslator(object):
@@ -132,10 +132,10 @@ if __name__ == "__main__":
         ["../resources/images/river64x64.png", 1]
     ]
     
-    ti = it.load("image.imd")
     ti = it.breakdown_image(*images[1])
-    it.save(ti, "image")
+    ti.save("image")
+    print(ti)
     
-
+    ti.load("image.imd")
     print(ti)
     
