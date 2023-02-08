@@ -36,7 +36,7 @@ class Tile(object):
         return len(self.pixels)
     
     def _check_size(self):
-        if len(self.pixels) != len(awldf.pixels[0]):
+        if len(self.pixels) != len(self.pixels[0]):
             raise DimesionException("Tile has wrong dimension, width and height atr expected to be equal - got ({len(self.pixels)}|{self.pixels[0]})")
 
     def __str__(self):
