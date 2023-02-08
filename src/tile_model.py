@@ -60,7 +60,7 @@ class Pattern(object):
 
 
 class TileModel(object):
-    def __init__(self, translated_image: image_translator.ImageTranslator):
+    def __init__(self, translated_image: image_translator.TranslatedImage):
         self._translated_image = translated_image
         self.patterns = []
         self.rules = {}
@@ -81,7 +81,7 @@ class TileModel(object):
         for j in range(size[1]):
             pattern.append([])
             for i in range(size[0]):
-                pattern[-1].append(self._translated_image.translated_image[y + j][x + i])
+                pattern[-1].append(self._translated_image.bitmap[y + j][x + i])
         return Pattern(pattern)
     
     def _add_pattern(self, pattern: Pattern) -> None:
@@ -106,7 +106,7 @@ class TileModel(object):
         utils.verbose(f"Breakdown bitmap into {pattern_size}-sized patterns", 1)
         if pattern_size[0] <= 1 or pattern_size[1] <= 1:
             raise ValueError(f"pattern_size must be at least 2x2, got {pattern_size[0]}x{pattern_size[1]}")
-        image_map = self._translated_image.translated_image
+        image_map = self._translated_image.bitmap
         for y in range(len(image_map) - (pattern_size[1] - 1)):
             for x in range(len(image_map[y]) - (pattern_size[0] - 1)):
                 pattern = self._get_pattern((x, y), pattern_size)
@@ -176,13 +176,12 @@ class TileModel(object):
 
 if __name__ == "__main__":
     it = image_translator.ImageTranslator()
-    it.breakdown_image("../resources/images/streets32x32.png", 8)
-    it.breakdown_image("../resources/images/river32x32.png", 1)
-    it.breakdown_image("../resources/images/example4x4.png", 1)
+    ti = it.breakdown_image("../resources/images/streets32x32.png", 8)
+    ti = it.breakdown_image("../resources/images/river32x32.png", 1)
+    ti = it.breakdown_image("../resources/images/example4x4.png", 1)
 
-    print(it)
 
-    tm = TileModel(it)
+    tm = TileModel(ti)
     tm.build_patterns((2, 2))
     tm.build_rules()
     

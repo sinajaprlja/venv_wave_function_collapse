@@ -245,23 +245,24 @@ class WaveFunctionCollapse(object):
 
 if __name__ == "__main__":
     filenames = [
-        "../resources/images/example4x4.png",
-        "../resources/images/river32x32.png",    
+        ["../resources/images/example4x4.png", 1],
+        ["../resources/images/river32x32.png", 1],   
+        ["../resources/images/streets32x32.png", 8]
     ]
-    filename = filenames[0]
+    file = 2
 
     it = image_translator.ImageTranslator()
-    it.breakdown_image(filename, 1)
+    ti = it.breakdown_image(*filenames[file])
 
-    tm = tile_model.TileModel(it)
+    tm = tile_model.TileModel(ti)
     tm.build_patterns((2, 2))
     tm.build_rules()
 
     wfc = WaveFunctionCollapse(tm)
     
     for i in range(1):
-        wfc.generate_map((32, 16))
+        wfc.generate_map((2, 2))
 
         reversed_map = tm.reverse_patterns(wfc.output)
 
-        rebuild_image = it.rebuild_image(reversed_map, f"{filename[:-3]}result{i}.png")
+        rebuild_image = it.rebuild_image(image_translator.TranslatedImage(ti.tile_map, reversed_map), f"{filenames[file][0][:-3]}result{i}.png")
