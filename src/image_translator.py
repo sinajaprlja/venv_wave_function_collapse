@@ -8,7 +8,10 @@ import utils
 
 
 class DimensionException(Exception):
-    def __init__(self, msg=""):
+    """
+    DimensionException is a custom exception class for when an array has unexcpected dimensions
+    """
+    def __init__(self, msg="Array has unexpected dimensions"):
         super().__init__(msg)    
 
 
@@ -21,23 +24,28 @@ class Tile(object):
     Tiles are are always quadratic, which means "height == width"
     ! Tiles with equal pixeldata can have different indicies when created seperatly !
     """
-    
-    #  
     index = 0
     
     def __init__(self, pixels: list):
+        if len(pixels) != len(pixels[0]):
+            raise DimesionException("Tile has wrong dimension, width and height are expected to be equal - got ({len(self.pixels)}|{self.pixels[0]})")
         self.pixels = pixels
-        self._check_size()
         self.index = Tile.index
         Tile.index += 1
+        self._iter_index = -1
 
     @property
     def size(self) -> int:
         return len(self.pixels)
     
-    def _check_size(self):
-        if len(self.pixels) != len(self.pixels[0]):
-            raise DimesionException("Tile has wrong dimension, width and height atr expected to be equal - got ({len(self.pixels)}|{self.pixels[0]})")
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self._iter_index += 1
+        if self._iter_index < len(self.pixels):
+            return self.pixels[self._iter_index]
+        raise StopIteration
 
     def __str__(self):
         s = str(index)
@@ -64,18 +72,32 @@ class ImageTranslator(object):
     def number_of_patterns(self):
         return Tile.index 
 
-    def load(self) -> None:
+    def load(self, filename) -> None:
         raise NotImplementedError()
 
-    def save(self) -> None:
-        raise NotImplementedError()
+    def save(self, filename) -> None:
+        try:
+            with open(f"{filename}.imd", "w") as file:
+                for index, tile in enumerate(self.translation_map):
+                    file.write(f"\ntile - {index}\n")
+                    for line in tile:
+                        file.write(f"{str(line)}\n")
+                file.write("\nimage\n")
+                for line in self.translated_image:
+                    file.write(f"{str(line)}\n")
+        except IOError as e:
+            self.save("tmp.imd")
+        except:
+            raise
+        
+
 
     def breakdown_image(self, image_path: str, tile_size: int) -> None:  
         utils.verbose(f"breaking down {image_path} into tiles of size {tile_size}", 1)
         image = Image.open(image_path)
         self.__init__()
         if image.width / tile_size != image.width // tile_size and image.height / tile_size != image.height // tile_size:
-            raise ValueError(f"image dimensions are not a multiple of the tile dimensions - img=({image.width},{image.height}), tile=({tile_size},{tile_size})")
+            raise DimensionException(f"image dimensions are not a multiple of the tile dimensions - img=({image.width},{image.height}), tile=({tile_size},{tile_size})")
         
         for x in range(image.width // tile_size):
             self.translated_image.append([])
@@ -120,12 +142,13 @@ class ImageTranslator(object):
 if __name__ == "__main__":
     it = ImageTranslator()
     images = [
+        ["../resources/images/example4x4.png", 1],
         ["../resources/images/streets32x32.png", 8],
         ["../resources/images/river32x32.png", 1],
         ["../resources/images/river64x64.png", 1]
     ]
     
-    it.breakdown_image(*images[0]).save()
+    it.breakdown_image(*images[1]).save("image")
 
     print(it)
     
