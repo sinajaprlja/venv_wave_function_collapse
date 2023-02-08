@@ -39,15 +39,6 @@ class Tile(object):
     def size(self) -> int:
         return len(self.pixels)
     
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self._iter_index += 1
-        if self._iter_index < len(self.pixels):
-            return self.pixels[self._iter_index]
-        raise StopIteration
-
     def __str__(self):
         s = str(index)
         for line in pixels:
