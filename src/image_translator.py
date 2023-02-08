@@ -25,14 +25,10 @@ class Tile(object):
     Tiles are are always quadratic, which means "height == width"
     ! Tiles with equal pixeldata can have different indicies when created seperatly !
     """
-    index = 0
-    
     def __init__(self, pixels: list):
         if len(pixels) != len(pixels[0]):
             raise DimesionException("Tile has wrong dimension, width and height are expected to be equal - got ({len(self.pixels)}|{self.pixels[0]})")
         self.pixels = pixels
-        self.index = Tile.index
-        Tile.index += 1
 
     @property
     def size(self) -> int:
@@ -46,7 +42,7 @@ class Tile(object):
 
 
 class TranslatedImage(object):
-    def __init__(self, tile_map, bitmap):
+    def __init__(self, tile_map=None, bitmap=None):
         self.tile_map = tile_map
         self.bitmap = bitmap
 
@@ -55,8 +51,19 @@ class TranslatedImage(object):
         for line in self.bitmap:
             result = f"{result}\n"
             for value in line:
-                result = f"{result} {value:{len(str(Tile.index))}d}"
+                result = f"{result} {value:{len(str(len(self.tile_map) - 1))}d}"
         return result
+
+    def load(self, filename: str) -> None:
+        utils.verbose(f"Loading translation data from '{filename}'", 1)
+        with open(filename, "rb") as file:
+            data = pickle.load(file)
+            self.tile_map, self.bitmap = data
+
+    def save(self, translated_image: TranslatedImage, filename: str) -> None:
+        utils.verbose(f"Saving translation data to '{filename}.imd'", 1)
+        with open(f"{filename}.imd", "wb") as file:
+            pickle.dump([translated_image.tile_map, translated_image.bitmap], file, pickle.HIGHEST_PROTOCOL)
 
 
 class ImageTranslator(object):
@@ -66,20 +73,6 @@ class ImageTranslator(object):
     The simplified bitmap only contains the indicies of the tiles, the corresponding pixeldata 
     can be found in <translation_map> where the list index corresponds to the tile index
     """
-
-    def load(self, filename: str) -> None:
-        utils.verbose(f"Loading translation data from '{filename}'", 1)
-        with open(filename, "rb") as file:
-            data = pickle.load(file)
-            ti = TranslatedImage(*data)
-            Tile.index = len(ti.tile_map)
-        return ti
-
-    def save(self, translated_image: TranslatedImage, filename: str) -> None:
-        utils.verbose(f"Saving translation data to '{filename}.imd'", 1)
-        with open(f"{filename}.imd", "wb") as file:
-            pickle.dump([translated_image.tile_map, translated_image.bitmap], file, pickle.HIGHEST_PROTOCOL)
-        
 
     def breakdown_image(self, image_path: str, tile_size: int) -> None:  
         utils.verbose(f"breaking down {image_path} into tiles of size {tile_size}", 1)
