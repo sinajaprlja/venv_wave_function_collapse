@@ -1,4 +1,11 @@
+# vi stuff
 *.swp
+
+# python stuff
 __pycache__/
-tmp.py
+
+# wfc results
 *result*.png
+
+# image data files
+*.imd
