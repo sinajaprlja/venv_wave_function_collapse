@@ -4,6 +4,7 @@
 import image_translator
 import directions
 import utils
+import pickle
 
 from config import *
 
@@ -21,19 +22,21 @@ class Pattern(object):
         self.height = len(pixels)
         self.collapsed = False
 
-    def set_probability(self, probability: float):
+    def set_probability(self, probability: float) -> None:
         self.probability = probability
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.index)
     
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
+        "Pattern objects are equal when the pixeldata is equal"
         return self.pixels == other.pixels
     
-    def __hash__(self):
+    def __hash__(self) -> int:
+        "Hash method for enabling Pattern objects as dict-keys"
         return hash(self.index)
 
-    def overlaps(self, other, direction):
+    def overlaps(self, other, direction: directions.Directions) -> bool:
         """
         Checks if two patterns overlapping parts are equal.
         The overlapping part is determined by the given direction(UP, UP_RIGHT, RIGHT, ...)
