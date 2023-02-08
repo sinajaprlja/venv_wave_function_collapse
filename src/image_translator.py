@@ -2,6 +2,7 @@
 
 from PIL import Image
 import numpy as np
+import pickle
 
 import utils
 
@@ -73,24 +74,17 @@ class ImageTranslator(object):
         return Tile.index 
 
     def load(self, filename) -> None:
-        raise NotImplementedError()
+        utils.verbose(f"Loading translation data from '{filename}'", 1)
+        with open(filename, "rb") as file:
+            data = pickle.load(file)
+            self.translation_map, self.translated_image = data
+            Tile.index = len(self.translation_map)
 
     def save(self, filename) -> None:
-        try:
-            with open(f"{filename}.imd", "w") as file:
-                for index, tile in enumerate(self.translation_map):
-                    file.write(f"\ntile - {index}\n")
-                    for line in tile:
-                        file.write(f"{str(line)}\n")
-                file.write("\nimage\n")
-                for line in self.translated_image:
-                    file.write(f"{str(line)}\n")
-        except IOError as e:
-            self.save("tmp.imd")
-        except:
-            raise
+        utils.verbose(f"Saving translation data to '{filename}.imd'", 1)
+        with open(f"{filename}.imd", "wb") as file:
+            pickle.dump([self.translation_map, self.translated_image], file, pickle.HIGHEST_PROTOCOL)
         
-
 
     def breakdown_image(self, image_path: str, tile_size: int) -> None:  
         utils.verbose(f"breaking down {image_path} into tiles of size {tile_size}", 1)
@@ -148,7 +142,9 @@ if __name__ == "__main__":
         ["../resources/images/river64x64.png", 1]
     ]
     
-    it.breakdown_image(*images[1]).save("image")
+    it.load("image.imd")
+    #it.breakdown_image(*images[1]).save("image")
+    
 
     print(it)
     
