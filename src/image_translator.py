@@ -42,7 +42,6 @@ class _Tile(object):
             s = f"{s}\n{line}"
         return s
 
-
 @dataclasses.dataclass(slots=True)
 class TranslatedImage(object):
     """
@@ -54,7 +53,7 @@ class TranslatedImage(object):
     """
     tile_map: list
     bitmap: list
-
+    
     def __str__(self) -> str:
         result = "Translated Image"
         for line in self.bitmap:
@@ -62,7 +61,7 @@ class TranslatedImage(object):
             for value in line:
                 result = f"{result} {value:{len(str(len(self.tile_map) - 1))}}"
         return result
-
+    
     def load(self, filename: str) -> None:
         """
         Loads all data from given binary file, look for *.imd files
