@@ -26,6 +26,7 @@ class _Tile(object):
     Tiles are are always quadratic, which means "height == width"
     ! Tiles with equal pixeldata can have different indicies when created seperatly !
     """
+    
     pixels: list
 
     def __post_init__(self):

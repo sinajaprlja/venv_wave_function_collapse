@@ -73,16 +73,33 @@ class Pattern(object):
 
 @dataclasses.dataclass(slots=True)
 class TileModel(object):
+    """
+    """
+
     patterns: list
     rules: dict
 
-    def load(self):
-        raise NotImplementedError()
+    def load(self, filename: str) -> None:
+        """
+        Loads all data from given binary file, look for *.tmd files
+        Overwrites currently saved data
+        """
+        utils.verbose(f"Loading model data from '{filename}'", 1)
+        with open(filename, "rb") as file:
+            data = pickle.load(file)
+            self.patterns = data["patterns"]
+            self.rules = data["rules"]
 
-    def save(self):
-        raise NotImplementedError()
+    def save(self, filename: str) -> None:
+        """
+        Saves all data to given filename as binary, adds extension .tmd
+        """
+        utils.verbose(f"Saving model data to '{filename}.imd'", 1)
+        with open(f"{filename}.tmd", "wb") as file:
+            pickle.dump(dataclasses.asdict(self), file, pickle.HIGHEST_PROTOCOL)
 
     def __str__(self):
+        "Print all patterns with their corresponding index followed by printing all rules below"
         result = "Patterns\n"
         for pattern in self.patterns:
             result = f"{result}  {pattern.index}\n    {pattern.pixels}\n"
@@ -95,10 +112,14 @@ class TileModel(object):
         return result
     
     def __len__(self):
+        "Model length equals the number of rules"
         return sum([len(self.rules[pattern][direction]) for pattern in self.rules for direction in self.rules[pattern]])
 
 
 class ModelBuilder(object):
+    """
+    """
+
     @staticmethod
     def _get_pattern(pos: tuple, size: int, bitmap: list) -> Pattern:
         """
@@ -180,12 +201,16 @@ class ModelBuilder(object):
 
     @staticmethod
     def build_model(translated_image: image_translator.TranslatedImage, pattern_size: int) -> TileModel:
+        "Wrapper for building a model, gets all patterns and then calculates all resulting rules"
         patterns = ModelBuilder._build_patterns(pattern_size, translated_image.bitmap)
         rules = ModelBuilder._build_rules(patterns)
         return TileModel(patterns, rules)
     
     @staticmethod
     def reverse_patterns(bitmap: list) -> list:
+        """
+        TODO BROKE PROBABLY
+        """
         result = []
         for _ in range(len(bitmap) * bitmap[0][0][0].height): 
             result.append([])
