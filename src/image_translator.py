@@ -136,11 +136,11 @@ class ImageTranslator(object):
                 result[-1].append([])
         
         # Fill result array corresponding to pixel data in the corresponding tiles
-        for image.bitmap_row_index, image.bitmap_row in enumerate(image.bitmap):
-            for image.bitmap_col_index, tile in enumerate(image.bitmap_row):
+        for bitmap_row_index, bitmap_row in enumerate(image.bitmap):
+            for bitmap_col_index, tile in enumerate(bitmap_row):
                 for tile_row_index, tile_row in enumerate(image.tile_map[tile].pixels):
                     for tile_col_index, pixel in enumerate(tile_row):
-                        result[image.bitmap_row_index * image.tile_map[0].size+ tile_row_index][image.bitmap_col_index *  image.tile_map[0].size + tile_col_index] = pixel
+                        result[bitmap_row_index * image.tile_map[0].size + tile_row_index][bitmap_col_index *  image.tile_map[0].size + tile_col_index] = pixel
         
         # Convert array to image
         img = Image.fromarray(np.asarray(result, dtype=np.uint8))

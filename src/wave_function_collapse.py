@@ -212,6 +212,7 @@ class WaveFunctionCollapse(object):
                     self.next(size)
                     if config.DEBUG_LEVEL >= 1:
                         progressbar(self.number_of_collapsed_tiles, size[0]*size[1], bar_lenght=100, text_back=f" {time.time()-start:.2f} sec")
+                utils.verbose(f"Successfully generated bitmap", 1)
                 return True
             except UnsolvableException as e:       
                 tries += 1
@@ -244,25 +245,26 @@ class WaveFunctionCollapse(object):
         return result
 
 if __name__ == "__main__":
+    
+    # Example files and their tile size
     filenames = [
         ["../resources/images/example4x4.png", 1],
         ["../resources/images/river32x32.png", 1],   
         ["../resources/images/streets32x32.png", 8]
     ]
-    file = 2
+    file = 0
+    
+    # Translate the input image
+    ti = image_translator.ImageTranslator.breakdown_image(*filenames[file])
 
-    it = image_translator.ImageTranslator()
-    ti = it.breakdown_image(*filenames[file])
-
-    tm = tile_model.TileModel(ti)
-    tm.build_patterns((2, 2))
-    tm.build_rules()
-
+    # Build a model out of the input image
+    tm = tile_model.ModelBuilder.build_model(ti, (2, 2))
+    
+    # Initialize the wave function collapse algorithm
     wfc = WaveFunctionCollapse(tm)
     
+    # Generate new images via wave function collapse, rebuild the image and save 
     for i in range(1):
-        wfc.generate_map((2, 2))
-
-        reversed_map = tm.reverse_patterns(wfc.output)
-
-        rebuild_image = it.rebuild_image(image_translator.TranslatedImage(ti.tile_map, reversed_map), f"{filenames[file][0][:-3]}result{i}.png")
+        wfc.generate_map((32, 32))
+        reversed_map = tile_model.ModelBuilder.reverse_patterns(wfc.output)
+        rebuild_image = image_translator.ImageTranslator.rebuild_image(image_translator.TranslatedImage(ti.tile_map, reversed_map), f"{filenames[file][0][:-3]}result{i}.png")
