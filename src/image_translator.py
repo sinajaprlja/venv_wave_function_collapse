@@ -89,8 +89,9 @@ class ImageTranslator(object):
     The simplified bitmap only contains the indicies of the tiles.
     Data of translated images is stored via the TranslatedImage dataclass
     """
-
-    def breakdown_image(self, image_path: str, tile_size: int) -> None:  
+    
+    @staticmethod
+    def breakdown_image(image_path: str, tile_size: int) -> None:  
         utils.verbose(f"breaking down {image_path} into tiles of size {tile_size}", 1)
         image = Image.open(image_path)
         
@@ -120,11 +121,10 @@ class ImageTranslator(object):
         translation_map = list(map(lambda x: _Tile(x), translation_map))
 
         utils.verbose(f"Brokedown image into {len(translation_map)} different tiles", 1)
-        utils.verbose(self, 3)
         return TranslatedImage(translation_map, translated_image)
 
-    
-    def rebuild_image(self, image: TranslatedImage, filename: str) -> list:
+    @staticmethod 
+    def rebuild_image(image: TranslatedImage, filename: str) -> list:
         utils.verbose(f"Rebuilding image from image.bitmap and saving it to {filename}", 1)
 
         # Build blank result array
@@ -149,7 +149,6 @@ class ImageTranslator(object):
     
 
 if __name__ == "__main__":
-    it = ImageTranslator()
 
     # Samples files with corresponding tile size
     images = [
@@ -159,7 +158,7 @@ if __name__ == "__main__":
         ["../resources/images/river64x64.png", 1]
     ]
     
-    ti = it.breakdown_image(*images[1])
+    ti = ImageTranslator.breakdown_image(*images[1])
     ti.save("image")
     print(ti)
     
