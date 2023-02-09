@@ -5,28 +5,37 @@ import image_translator
 import directions
 import utils
 import pickle
+import dataclasses
 
 from config import *
 
+@dataclasses.dataclass(slots=True)
 class Pattern(object):
     """
     Class for storing corresponding pattern data and providing basic functionality 
     for comparing in different ways(overlapping/equality/...) as well as simple
     transformation(rotating,...)
     """
-    def __init__(self, pixels):
-        self.pixels = pixels
-        self.probability = None
-        self.weight = 1
-        self.width = len(pixels[0])
-        self.height = len(pixels)
-        self.collapsed = False
+    pixels: list
+    index: list = None
+    probability: float = .0
+    weight: int = 1
+    
+    @property
+    def width(self):
+        return len(self.pixels[0])
 
+    @property
+    def height(self):
+        return len(self.pixels)
+    
     def set_probability(self, probability: float) -> None:
+        if not (0 <= probability < 1):
+            raise ValueError(f"Probability value is out of range: got {probability}")
         self.probability = probability
 
     def __str__(self) -> str:
-        return str(self.index)
+        return str(self.index[0])
     
     def __eq__(self, other) -> bool:
         "Pattern objects are equal when the pixeldata is equal"
@@ -34,7 +43,7 @@ class Pattern(object):
     
     def __hash__(self) -> int:
         "Hash method for enabling Pattern objects as dict-keys"
-        return hash(self.index)
+        return hash(self.index[0])
 
     def overlaps(self, other, direction: directions.Directions) -> bool:
         """
@@ -56,8 +65,9 @@ class Pattern(object):
                 if self.pixels[row_index[0]][col_index[0]] != other.pixels[row_index[1]][col_index[1]]:
                     return False
         return True
-    
+   
     def rotate(self):
+        "Rotate the pixels 90° clockwise and returning a new Pattern instance"
         return Pattern(list(col[::-1] for col in zip(*self.pixels)))
 
 
@@ -124,9 +134,8 @@ class TileModel(object):
         weights = sum([pattern.weight for pattern in self.patterns])
         for index, pattern in enumerate(self.patterns):
             pattern.set_probability(pattern.weight / weights)
-            pattern.index = index
-            Pattern.index = index
-        utils.verbose(f"Brokedown bitmap into {Pattern.index + 1} patterns of size {pattern_size}", 1)
+            pattern.index = [index]
+        utils.verbose(f"Brokedown bitmap into {len(self.patterns)} patterns of size {pattern_size}", 1)
 
     def build_rules(self) -> None:
         """
@@ -177,12 +186,15 @@ class TileModel(object):
     def __len__(self):
         return sum([len(self.rules[pattern][direction]) for pattern in self.rules for direction in self.rules[pattern]])
 
+
+class ModelBuilder(object):
+    pass
+
 if __name__ == "__main__":
     it = image_translator.ImageTranslator()
     ti = it.breakdown_image("../resources/images/streets32x32.png", 8)
     ti = it.breakdown_image("../resources/images/river32x32.png", 1)
     ti = it.breakdown_image("../resources/images/example4x4.png", 1)
-
 
     tm = TileModel(ti)
     tm.build_patterns((2, 2))
