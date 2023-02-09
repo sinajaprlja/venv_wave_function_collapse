@@ -3,6 +3,7 @@
 from PIL import Image
 import numpy as np
 import pickle
+import dataclasses
 
 import utils
 
@@ -16,7 +17,7 @@ class DimensionException(Exception):
         super().__init__(msg)    
 
 
-
+@dataclasses.dataclass(slots=True)
 class _Tile(object):
     """
     Class representing a little image called a tile.
@@ -25,10 +26,11 @@ class _Tile(object):
     Tiles are are always quadratic, which means "height == width"
     ! Tiles with equal pixeldata can have different indicies when created seperatly !
     """
-    def __init__(self, pixels: list):
-        if len(pixels) != len(pixels[0]):
+    pixels: list
+
+    def __post_init__(self):
+        if len(self.pixels) != len(self.pixels[0]):
             raise DimesionException("Tile has wrong dimension, width and height are expected to be equal - got ({len(self.pixels)}|{self.pixels[0]})")
-        self.pixels = pixels
 
     @property
     def size(self) -> int:
@@ -41,6 +43,7 @@ class _Tile(object):
         return s
 
 
+@dataclasses.dataclass(slots=True)
 class TranslatedImage(object):
     """
     Class containing all data of a translated image, also provides methods for saving
@@ -49,18 +52,16 @@ class TranslatedImage(object):
     the translated image is saved as bitmap consisting of the corresponding
     tile indicies.
     """
-    def __init__(self, tile_map, bitmap):
-        self.tile_map = tile_map
-        self.bitmap = bitmap
+    tile_map: list
+    bitmap: list
 
     def __str__(self) -> str:
         result = "Translated Image"
         for line in self.bitmap:
             result = f"{result}\n"
             for value in line:
-                result = f"{result} {value:{len(str(len(self.tile_map) - 1))}d}"
+                result = f"{result} {value:{len(str(len(self.tile_map) - 1))}}"
         return result
-    
 
     def load(self, filename: str) -> None:
         """
@@ -70,8 +71,8 @@ class TranslatedImage(object):
         utils.verbose(f"Loading translation data from '{filename}'", 1)
         with open(filename, "rb") as file:
             data = pickle.load(file)
-            self.tile_map, self.bitmap = data
-        
+            self.tile_map = data["tile_map"]
+            self.bitmap = data["bitmap"]
 
     def save(self, filename: str) -> None:
         """
@@ -79,7 +80,7 @@ class TranslatedImage(object):
         """
         utils.verbose(f"Saving translation data to '{filename}.imd'", 1)
         with open(f"{filename}.imd", "wb") as file:
-            pickle.dump([self.tile_map, self.bitmap], file, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(dataclasses.asdict(self), file, pickle.HIGHEST_PROTOCOL)
 
 
 class ImageTranslator(object):
