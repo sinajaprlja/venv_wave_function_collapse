@@ -71,105 +71,16 @@ class Pattern(object):
         return Pattern(list(col[::-1] for col in zip(*self.pixels)))
 
 
-
+@dataclasses.dataclass(slots=True)
 class TileModel(object):
-    def __init__(self, translated_image: image_translator.TranslatedImage):
-        self._translated_image = translated_image
-        self.patterns = []
-        self.rules = {}
+    patterns: list
+    rules: dict
 
     def load(self):
         raise NotImplementedError()
 
     def save(self):
         raise NotImplementedError()
-
-    def _get_pattern(self, pos: tuple, size: int) -> Pattern:
-        """
-        Returns a PatternObject containing a 2-dimensional list. Starting at <pos>
-        from the top left corner, with width/height equal to <size>
-        """
-        x, y = pos
-        pattern = []
-        for j in range(size[1]):
-            pattern.append([])
-            for i in range(size[0]):
-                pattern[-1].append(self._translated_image.bitmap[y + j][x + i])
-        return Pattern(pattern)
-    
-    def _add_pattern(self, pattern: Pattern) -> None:
-        """
-        Adds the pattern to the pattern_list when its not already in there,
-        else the patterns weight is just increased by 1
-        """
-        if not pattern in self.patterns:
-            self.patterns.append(pattern)
-        else:
-            for existing_pattern in self.patterns:
-                if pattern == existing_pattern:
-                    existing_pattern.weight += 1
-                    return
-
-    def build_patterns(self, pattern_size: int) -> None:
-        """
-        Get all possible patterns in the translated_image of size <pattern_size> and rotate
-        them 90/180 and 270 degrees when option ROTATE is enabled
-        Save the corresponding occurance probabilties to as soon as all distinct patterns have been found
-        """
-        utils.verbose(f"Breakdown bitmap into {pattern_size}-sized patterns", 1)
-        if pattern_size[0] <= 1 or pattern_size[1] <= 1:
-            raise ValueError(f"pattern_size must be at least 2x2, got {pattern_size[0]}x{pattern_size[1]}")
-        image_map = self._translated_image.bitmap
-        for y in range(len(image_map) - (pattern_size[1] - 1)):
-            for x in range(len(image_map[y]) - (pattern_size[0] - 1)):
-                pattern = self._get_pattern((x, y), pattern_size)
-                
-                if ROTATE:
-                    for _ in range(4):
-                        pattern = pattern.rotate()
-                        self._add_pattern(pattern)            
-                else:
-                    self._add_pattern(pattern)            
-
-        weights = sum([pattern.weight for pattern in self.patterns])
-        for index, pattern in enumerate(self.patterns):
-            pattern.set_probability(pattern.weight / weights)
-            pattern.index = [index]
-        utils.verbose(f"Brokedown bitmap into {len(self.patterns)} patterns of size {pattern_size}", 1)
-
-    def build_rules(self) -> None:
-        """
-        builds the rules for generating new images by overlapping patterns 
-        for every direction(UP, UP_RIGHT, RIGHT, ...) 
-        Add rule when overlapping pattern and overlapping questioned pattern are equal
-        rules: dict 
-            pattern -> dict
-                direction -> corresponding pattern indicies
-        """
-        self.rules = {} 
-        for pattern in self.patterns:
-            self.rules[pattern] = {}
-            for direction in directions.Directions:
-                self.rules[pattern][direction] = []
-                for questioned_pattern in self.patterns:
-                    if pattern.overlaps(questioned_pattern, direction):
-                        self.rules[pattern][direction].append(questioned_pattern)
-        utils.verbose(f"Build {len(self)} rules", 1) 
-    
-    def reverse_patterns(self, bitmap: list) -> list:
-        result = []
-        for _ in range(len(bitmap) * bitmap[0][0][0].height): 
-            result.append([])
-            for _ in range(len(bitmap[0]) * bitmap[0][0][0].width):
-                result[-1].append([])
-        
-        for bitmap_row_index, bitmap_row in enumerate(bitmap):
-            for bitmap_col_index, pattern in enumerate(bitmap_row):
-                for pattern_row_index, pattern_row in enumerate(pattern[0].pixels):
-                    for pattern_col_index, pixel in enumerate(pattern_row):
-                        result[bitmap_row_index * bitmap[0][0][0].height + pattern_row_index][bitmap_col_index * bitmap[0][0][0].width + pattern_col_index] = pixel
-        return result    
-
 
     def __str__(self):
         result = "Patterns\n"
@@ -188,7 +99,105 @@ class TileModel(object):
 
 
 class ModelBuilder(object):
-    pass
+    @staticmethod
+    def _get_pattern(pos: tuple, size: int, bitmap: list) -> Pattern:
+        """
+        Returns a PatternObject containing a 2-dimensional list. Starting at <pos>
+        from the top left corner, with width/height equal to <size>
+        """
+        x, y = pos
+        pattern = []
+        for j in range(size[1]):
+            pattern.append([])
+            for i in range(size[0]):
+                pattern[-1].append(bitmap[y + j][x + i])
+        return Pattern(pattern)
+    
+    @staticmethod
+    def _add_pattern(pattern: Pattern, patterns: list) -> None:
+        """
+        Adds the pattern to the pattern_list when its not already in there,
+        else the patterns weight is just increased by 1
+        """
+        if not pattern in patterns:
+            patterns.append(pattern)
+        else:
+            for existing_pattern in patterns:
+                if pattern == existing_pattern:
+                    existing_pattern.weight += 1
+                    return patterns
+        return patterns
+
+    @staticmethod
+    def _build_patterns(pattern_size: int, bitmap: list) -> None:
+        """
+        Get all possible patterns in the translated_image of size <pattern_size> and rotate
+        them 90/180 and 270 degrees when option ROTATE is enabled
+        Save the corresponding occurance probabilties to as soon as all distinct patterns have been found
+        """
+        utils.verbose(f"Breakdown bitmap into {pattern_size}-sized patterns", 1)
+        patterns = []
+        if pattern_size[0] <= 1 or pattern_size[1] <= 1:
+            raise ValueError(f"pattern_size must be at least 2x2, got {pattern_size[0]}x{pattern_size[1]}")
+        for y in range(len(bitmap) - (pattern_size[1] - 1)):
+            for x in range(len(bitmap[y]) - (pattern_size[0] - 1)):
+                pattern = ModelBuilder._get_pattern((x, y), pattern_size, bitmap)
+                
+                if ROTATE:
+                    for _ in range(4):
+                        pattern = pattern.rotate()
+                        patterns = ModelBuilder._add_pattern(pattern, patterns)            
+                else:
+                    patterns = ModelBuilder._add_pattern(pattern, patterns)
+
+        weights = sum([pattern.weight for pattern in patterns])
+        for index, pattern in enumerate(patterns):
+            pattern.set_probability(pattern.weight / weights)
+            pattern.index = [index]
+        utils.verbose(f"Brokedown bitmap into {len(patterns)} patterns of size {pattern_size}", 1)
+        return patterns
+
+    @staticmethod
+    def _build_rules(patterns: list) -> None:
+        """
+        builds the rules for generating new images by overlapping patterns 
+        for every direction(UP, UP_RIGHT, RIGHT, ...) 
+        Add rule when overlapping pattern and overlapping questioned pattern are equal
+        rules: dict 
+            pattern -> dict
+                direction -> corresponding pattern indicies
+        """
+        rules = {} 
+        for pattern in patterns:
+            rules[pattern] = {}
+            for direction in directions.Directions:
+                rules[pattern][direction] = []
+                for questioned_pattern in patterns:
+                    if pattern.overlaps(questioned_pattern, direction):
+                        rules[pattern][direction].append(questioned_pattern)
+        utils.verbose(f"Build {sum([len(rules[pattern][direction]) for pattern in rules for direction in rules[pattern]])} rules", 1) 
+        return rules
+
+    @staticmethod
+    def build_model(translated_image: image_translator.TranslatedImage, pattern_size: int) -> TileModel:
+        patterns = ModelBuilder._build_patterns(pattern_size, translated_image.bitmap)
+        rules = ModelBuilder._build_rules(patterns)
+        return TileModel(patterns, rules)
+    
+    @staticmethod
+    def reverse_patterns(bitmap: list) -> list:
+        result = []
+        for _ in range(len(bitmap) * bitmap[0][0][0].height): 
+            result.append([])
+            for _ in range(len(bitmap[0]) * bitmap[0][0][0].width):
+                result[-1].append([])
+        
+        for bitmap_row_index, bitmap_row in enumerate(bitmap):
+            for bitmap_col_index, pattern in enumerate(bitmap_row):
+                for pattern_row_index, pattern_row in enumerate(pattern[0].pixels):
+                    for pattern_col_index, pixel in enumerate(pattern_row):
+                        result[bitmap_row_index * bitmap[0][0][0].height + pattern_row_index][bitmap_col_index * bitmap[0][0][0].width + pattern_col_index] = pixel
+        return result    
 
 if __name__ == "__main__":
     it = image_translator.ImageTranslator()
@@ -196,9 +205,6 @@ if __name__ == "__main__":
     ti = it.breakdown_image("../resources/images/river32x32.png", 1)
     ti = it.breakdown_image("../resources/images/example4x4.png", 1)
 
-    tm = TileModel(ti)
-    tm.build_patterns((2, 2))
-    tm.build_rules()
-    
+    tm = ModelBuilder.build_model(ti, (2, 2)) 
     print(tm)
     print(len(tm))
