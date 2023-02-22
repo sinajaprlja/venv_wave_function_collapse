@@ -213,6 +213,22 @@ class ModelBuilder(object):
         TODO BROKE PROBABLY
         """
         result = []
+        for _ in range(len(bitmap)): 
+            result.append([])
+            for _ in range(len(bitmap[0])):
+                result[-1].append([])
+        
+        for bitmap_row_index, bitmap_row in enumerate(bitmap):
+            for bitmap_col_index, pattern in enumerate(bitmap_row):
+                result[bitmap_row_index][bitmap_col_index] = pattern[0].pixels[0][0]
+        return result    
+    
+    @staticmethod
+    def reverse_patterns_old(bitmap: list) -> list:
+        """
+        TODO BROKE PROBABLY
+        """
+        result = []
         for _ in range(len(bitmap) * bitmap[0][0][0].height): 
             result.append([])
             for _ in range(len(bitmap[0]) * bitmap[0][0][0].width):

@@ -252,7 +252,7 @@ if __name__ == "__main__":
         ["../resources/images/river32x32.png", 1],   
         ["../resources/images/streets32x32.png", 8]
     ]
-    file = 1
+    file = 0
     
     # Translate the input image
     ti = image_translator.ImageTranslator.breakdown_image(*filenames[file])
