@@ -19,6 +19,8 @@ COLOR_PALETTE = ["#2a2d34", "#a2a7a5", "#dae2df", "#157145", "#eea243"]
 
 
 pygame.init()
+pygame.font.init()
+pygame.mixer.init()
 display_width, display_height = 1920, 1200
 display = pygame.display.set_mode((display_width, display_height), pygame.NOFRAME)
 display_width, display_height = display.get_width(), display.get_height()
@@ -47,6 +49,12 @@ INPUT_IMAGE = pygame.transform.scale(INPUT_IMAGE, (INPUT_IMAGE.get_width() * _fa
 INPUT_IMAGE_POS_X = (display_width  - DISPLAY_BORDER) // 3 * 2 + ((display_width//3  - DISPLAY_BORDER - INPUT_IMAGE.get_width()) // 2)
 INPUT_IMAGE_POS_Y = (display_height - DISPLAY_BORDER) // 3 * 2 + ((display_height//3 - DISPLAY_BORDER - INPUT_IMAGE.get_height()) // 2)
 
+PATTERN_NUM = len(wfc._tile_model.patterns)
+
+_mouse_lock = False
+
+
+
 class App(object):
     def __init__(self):
         self._tile_size = None
@@ -67,7 +75,11 @@ class App(object):
     def _grid_x_offset(self) -> int:
         return ((display_width / 3 * 2) - self._grid_width) // 2
    
+    def _tile_x_offset(self, x_index: int) -> int:
+        return self._grid_x_offset + x_index * self._tile_size
 
+    def _tile_y_offset(self, y_index: int) -> int:
+        return self._grid_y_offset + y_index * self._tile_size
 
     def _quit_handler(self, event: pygame.event.Event) -> None:
         "Quitting the program on esc/quit_event"
@@ -80,6 +92,25 @@ class App(object):
                 pygame.quit()
                 sys.exit()
         
+    def _click_handler(self):
+        # Stop constant click events by locking mouse press status till button is released
+        global _mouse_lock
+        if not pygame.mouse.get_pressed()[0]:
+            _mouse_lock = False
+            return
+        if _mouse_lock:
+            return
+        x, y = self._mouse_to_tile_index()
+        if x >= 0 and x < wfc.size[1] and y >= 0 and y < wfc.size[0]:
+            wfc._collapse((x, y))
+            wfc._propagate((x, y), wfc.size)
+            _mouse_lock = True
+
+    def _mouse_to_tile_index(self) -> None:
+        x, y = pygame.mouse.get_pos()
+        return (int((x - self._grid_x_offset) // self._tile_size), int((y - self._grid_y_offset) // self._tile_size))
+        
+
     def _draw_grid_border(self) -> None:
         # Draw grid border
         grid_color_index = 1
@@ -88,15 +119,15 @@ class App(object):
         
         # Draw tiles
         for x in range(wfc.size[1]):
-            a, b = (self._grid_x_offset + x * self._tile_size, self._grid_y_offset), (self._grid_x_offset + x * self._tile_size, self._grid_y_offset + self._grid_height)
+            a, b = (self._tile_x_offset(x), self._grid_y_offset), (self._tile_x_offset(x), self._grid_y_offset + self._grid_height)
             pygame.draw.line(display, COLOR_PALETTE[grid_color_index], a, b)
-            a, b = (self._grid_x_offset + x * self._tile_size + self._tile_size - 1, self._grid_y_offset), (self._grid_x_offset + x * self._tile_size + self._tile_size - 1, self._grid_y_offset + self._grid_height)
+            a, b = (self._tile_x_offset(x) - 1, self._grid_y_offset), (self._tile_x_offset(x) - 1, self._grid_y_offset + self._grid_height)
             pygame.draw.line(display, COLOR_PALETTE[grid_color_index], a, b)
          
         for y in range(wfc.size[0]):
-            a, b =(self._grid_x_offset, self._grid_y_offset + y * self._tile_size), (self._grid_x_offset + self._grid_width, self._grid_y_offset + y * self._tile_size)
+            a, b = (self._grid_x_offset, self._tile_y_offset(y)), (self._grid_x_offset + self._grid_width, self._tile_y_offset(y))
             pygame.draw.line(display, COLOR_PALETTE[grid_color_index], a, b)
-            a, b = (self._grid_x_offset, self._grid_y_offset + y * self._tile_size + self._tile_size - 1), (self._grid_x_offset + self._grid_width, self._grid_y_offset + y * self._tile_size + self._tile_size - 1)
+            a, b = (self._grid_x_offset, self._tile_y_offset(y) - 1), (self._grid_x_offset + self._grid_width, self._tile_y_offset(y) - 1)
             pygame.draw.line(display, COLOR_PALETTE[grid_color_index], a, b)
     
 
@@ -115,12 +146,23 @@ class App(object):
         pygame.draw.rect(display, COLOR_PALETTE[4], rect, 0, 4)
         display.blit(INPUT_IMAGE, (INPUT_IMAGE_POS_X, INPUT_IMAGE_POS_Y))
 
-    def _draw_current_cell(self, mouse_pos: tuple) -> None:
-        cell_row = (mouse_pos[1] - self._grid_y_offset) // self._tile_size
-        cell_column = (mouse_pos[0] - self._grid_x_offset) // self._tile_size
-        if cell_row >= 0 and cell_row < wfc.size[0] and cell_column >= 0 and cell_column < wfc.size[1]:
-            pygame.draw.rect(display, COLOR_PALETTE[4], (self._grid_x_offset + cell_column * self._tile_size, self._grid_y_offset + cell_row * self._tile_size, self._tile_size, self._tile_size), 4, 2)
-
+    def _draw_hovered_tile(self, tile: tuple) -> None:
+        x, y = tile
+        if x >= 0 and x < wfc.size[0] and y >= 0 and y < wfc.size[1]:
+            pygame.draw.rect(display, COLOR_PALETTE[4], (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 4, 2)
+    
+    def _draw_tile_status(self) -> None:
+        for x in range(wfc.size[1]):
+            for y in range(wfc.size[0]):
+                font = pygame.font.SysFont("monospace", int(self._tile_size/2))
+                text = font.render(str(len(wfc.output[x][y])), 1, "#448844")
+                rect = text.get_rect(center=(self._tile_x_offset(x)+self._tile_size//2, self._tile_y_offset(y) + self._tile_size//2))
+                display.blit(text, rect)
+                #c = str(hex(int(255 / PATTERN_NUM * len(wfc.output[x][y]))))[2:]
+                #color = f"#{c}{c}{c}"
+                #if wfc.output[x][y][0].collapsed:
+                #    color = "#00ff00"
+                #pygame.draw.rect(display, color, (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 0, 8)
 
     def draw(self) -> None:
         display.fill("#111111")
@@ -128,7 +170,8 @@ class App(object):
         self._draw_containers()
         self._draw_grid_border()    
         self._draw_input_image()
-        self._draw_current_cell(pygame.mouse.get_pos())
+        self._draw_tile_status()
+        self._draw_hovered_tile(self._mouse_to_tile_index())
 
         pygame.display.update()
 
@@ -138,6 +181,9 @@ class App(object):
             for event in pygame.event.get():
                 self._quit_handler(event)
             
+            self._click_handler()
+
+
             self.draw()
 
     

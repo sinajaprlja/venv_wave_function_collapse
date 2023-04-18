@@ -148,12 +148,17 @@ class WaveFunctionCollapse(object):
                 maximum_probability = probability
         return maximum_probability
 
-    def _collapse(self, pos):
+    def _collapse(self, pos: tuple) -> None:
         """
         Collapse the tile at a specific position by taking the most probable patterns
         and randomly choose one.
         """
-        utils.verbose(f"Collapsing {pos}", 3)
+        utils.verbose(f"Collapsing {pos}", 1)
+
+        # This only occures when tiles are manually collapsed, the wfc-algorithms itself does not touch collapsed tiles in the first place
+        if self.output[pos[0]][pos[1]][0].collapsed:
+            utils.verbose(f"Tile {pos[0]}|{pos[1]} is has already been collapsed", 1)
+        
         if config.USE_MAX_PROBABILITY:
             maximum_probability = self._get_maximum_probability(pos)
             maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
@@ -161,7 +166,7 @@ class WaveFunctionCollapse(object):
         else:
             self.output[pos[0]][pos[1]] = [random.choice(self.output[pos[0]][pos[1]])]
         self.output[pos[0]][pos[1]][0].collapsed = True
-
+    
     def _propagate(self, start: tuple, size: tuple):
         """
         """
@@ -187,7 +192,7 @@ class WaveFunctionCollapse(object):
                 
     def next(self, size: int) -> None:
         """
-        Builds the next step of the output by collapsing and propagating threw every change
+        Builds the next step of the output by collapsing and propagating through every change
         """
         utils.verbose("Starting iteration of collapsing/propagating", 2)
         solution = []
