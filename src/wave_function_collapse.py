@@ -7,11 +7,12 @@ import math
 import time
 import random
 
-import image_translator
-import tile_model
-import directions
-import config
-import utils
+import src.image_translator as image_translator
+import src.tile_model as tile_model
+import src.directions as directions
+
+import src.config as config
+import src.utils as utils
 
 def progressbar(progress, maximum, text_front='', text_back='', filler_main='#', filler_back='-', bar_lenght=50):
     '''
@@ -56,6 +57,11 @@ class WaveFunctionCollapse(object):
         if self._output is None:
             raise NotInitializedException("output")
         return self._output
+    
+    @property
+    def size(self) -> tuple:
+        "returns output dimensions as (rows, columns)"
+        return (0, 0) if self._output is None else (len(self._output), len(self._output[0]))
 
     @property
     def number_of_collapsed_tiles(self):

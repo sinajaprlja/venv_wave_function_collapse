@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 import dataclasses
 
-import utils
+import src.utils as utils
 
 
 

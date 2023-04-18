@@ -1,13 +1,13 @@
 #! /usr/bin/python3
 
 
-import image_translator
-import directions
-import utils
 import pickle
 import dataclasses
 
-from config import *
+import src.image_translator as image_translator
+import src.directions as directions
+import src.utils as utils
+from src.config import *
 
 @dataclasses.dataclass(slots=True)
 class Pattern(object):
