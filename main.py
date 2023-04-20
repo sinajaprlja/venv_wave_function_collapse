@@ -151,24 +151,64 @@ class App(object):
         if x >= 0 and x < wfc.size[0] and y >= 0 and y < wfc.size[1]:
             pygame.draw.rect(display, COLOR_PALETTE[4], (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 4, 2)
     
+    def _draw_legend(self) -> None:
+        font = pygame.font.SysFont("monospace", 24)
+        for x in range(wfc.size[0]):
+            text = font.render(str(x), 1, COLOR_PALETTE[1])
+            rect = text.get_rect(center=(self._tile_x_offset(x)+self._tile_size//2, self._grid_y_offset - 24))
+            display.blit(text, rect)
+            
+        for y in range(wfc.size[1]):
+            text = font.render(str(y), 1, COLOR_PALETTE[1])
+            rect = text.get_rect(center=(self._grid_x_offset - 24, self._tile_y_offset(y)+self._tile_size//2))
+            display.blit(text, rect)
+                
+
+
     def _draw_tile_status(self) -> None:
+        _tile_size = (wfc.output[0][0][0].width * len(wfc.output[0][0][0].pixels[0]), wfc.output[0][0][0].height * len(wfc.output[0][0][0].pixels))
         for x in range(wfc.size[1]):
             for y in range(wfc.size[0]):
+                c = str(hex(int(255 - 255 / PATTERN_NUM * len(wfc.output[x][y]))))[2:]
+                if len(c) < 2:
+                    c = f"0{c}"
+                color = f"#{c}{c}{c}"
+                #if wfc.output[x][y][0].collapsed:
+                #    color = "#44ff44"
+                pygame.draw.rect(display, color, (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 0, 8)
+                
+                # Draw number of patterns left
                 font = pygame.font.SysFont("monospace", int(self._tile_size/2))
-                text = font.render(str(len(wfc.output[x][y])), 1, "#448844")
+                color = "#448844"
+                if wfc.output[x][y][0].collapsed:
+                    color = "#44ff44"
+                text = font.render(str(len(wfc.output[x][y])), 1, color)
                 rect = text.get_rect(center=(self._tile_x_offset(x)+self._tile_size//2, self._tile_y_offset(y) + self._tile_size//2))
                 display.blit(text, rect)
-                #c = str(hex(int(255 / PATTERN_NUM * len(wfc.output[x][y]))))[2:]
-                #color = f"#{c}{c}{c}"
-                #if wfc.output[x][y][0].collapsed:
-                #    color = "#00ff00"
-                #pygame.draw.rect(display, color, (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 0, 8)
+                
+               ## Draw pixeldata of collapsed tiles
+               #if wfc.output[x][y][0].collapsed:
+               #    _pixel_data = wfc.output[x][y][0].pixels
+               #    tile = pygame.Surface(_tile_size)
+               #    for i in range(wfc.output[0][0][0].width):
+               #        for j in range(wfc.output[0][0][0].height):
+               #            pattern = translated_image.tile_map[_pixel_data[i][j]].pixels
+               #            for k in range(len(pattern[0])):
+               #                for l in range(len(pattern)):
+               #                    tile.set_at((i * len(pattern[0]) + k, j * len(pattern) + l), (pattern[k][l][0], pattern[k][l][1], pattern[k][l][2], 128))
+               #            
+               #    
+               #    tile = pygame.transform.scale(tile, (self._tile_size, self._tile_size))
+               #    display.blit(tile, (self._tile_x_offset(x), self._tile_y_offset(y)))
+
+                
 
     def draw(self) -> None:
         display.fill("#111111")
         
         self._draw_containers()
         self._draw_grid_border()    
+        self._draw_legend()
         self._draw_input_image()
         self._draw_tile_status()
         self._draw_hovered_tile(self._mouse_to_tile_index())

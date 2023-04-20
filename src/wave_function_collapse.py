@@ -173,6 +173,7 @@ class WaveFunctionCollapse(object):
         utils.verbose(f"Start propagation from {start}", 3)
         stack = [start]
         while stack:
+            print(stack)
             pos = stack.pop()
             patterns = self.output[pos[0]][pos[1]]
             for direction in directions.Directions:
@@ -188,7 +189,7 @@ class WaveFunctionCollapse(object):
                         elif adjacent_pos not in stack:
                             stack.append(adjacent_pos)
                     self.output[adjacent_pos[0]][adjacent_pos[1]] = tmp 
-                        
+                
                 
     def next(self, size: int) -> None:
         """
