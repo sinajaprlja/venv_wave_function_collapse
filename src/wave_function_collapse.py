@@ -85,7 +85,15 @@ class WaveFunctionCollapse(object):
                 elif len(tile) == 0:
                     raise UnsolvableException()
         return True
-
+    
+    def ___control_collapsed(self) -> None:
+        for column in self.output:
+            for tile in column:
+                if len(tile) > 1:
+                    for t in tile:
+                        t.collapsed = False
+                else:
+                    tile[0].collapsed = True
 
     def _get_possible_patterns(self, pos: tuple) -> list:
         """
@@ -153,11 +161,12 @@ class WaveFunctionCollapse(object):
         Collapse the tile at a specific position by taking the most probable patterns
         and randomly choose one.
         """
-        utils.verbose(f"Collapsing {pos}", 1)
+        utils.verbose(f"Collapsing {pos}", 2)
 
         # This only occures when tiles are manually collapsed, the wfc-algorithms itself does not touch collapsed tiles in the first place
-        if self.output[pos[0]][pos[1]][0].collapsed:
-            utils.verbose(f"Tile {pos[0]}|{pos[1]} is has already been collapsed", 1)
+        #if self.output[pos[0]][pos[1]][0].collapsed:
+        if len(self.output[pos[0]][pos[1]]):
+            utils.verbose(f"Tile {pos[0]}|{pos[1]} is has already been collapsed", 2)
         
         if config.USE_MAX_PROBABILITY:
             maximum_probability = self._get_maximum_probability(pos)
@@ -173,7 +182,6 @@ class WaveFunctionCollapse(object):
         utils.verbose(f"Start propagation from {start}", 3)
         stack = [start]
         while stack:
-            print(stack)
             pos = stack.pop()
             patterns = self.output[pos[0]][pos[1]]
             for direction in directions.Directions:
