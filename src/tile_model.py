@@ -20,7 +20,6 @@ class Pattern(object):
     index: list = None
     probability: float = .0
     weight: int = 1
-    collapsed: bool = False
 
     @property
     def width(self):

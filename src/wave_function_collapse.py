@@ -86,15 +86,6 @@ class WaveFunctionCollapse(object):
                     raise UnsolvableException()
         return True
     
-    def ___control_collapsed(self) -> None:
-        for column in self.output:
-            for tile in column:
-                if len(tile) > 1:
-                    for t in tile:
-                        t.collapsed = False
-                else:
-                    tile[0].collapsed = True
-
     def _get_possible_patterns(self, pos: tuple) -> list:
         """
         Returns all valid patters at specific position
@@ -111,7 +102,7 @@ class WaveFunctionCollapse(object):
         """
         utils.verbose(f"Calculate entropy at {pos}", 3)
         entropy = 0
-        if len(self.output[pos[0]][pos[1]]) == 1 and self.output[pos[0]][pos[1]][0].collapsed:
+        if len(self.output[pos[0]][pos[1]]) == 1:
             return 9999
         
         if self.output[pos[0]][pos[1]] == []:
@@ -164,7 +155,6 @@ class WaveFunctionCollapse(object):
         utils.verbose(f"Collapsing {pos}", 2)
 
         # This only occures when tiles are manually collapsed, the wfc-algorithms itself does not touch collapsed tiles in the first place
-        #if self.output[pos[0]][pos[1]][0].collapsed:
         if len(self.output[pos[0]][pos[1]]):
             utils.verbose(f"Tile {pos[0]}|{pos[1]} is has already been collapsed", 2)
         
@@ -174,7 +164,6 @@ class WaveFunctionCollapse(object):
             self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
         else:
             self.output[pos[0]][pos[1]] = [random.choice(self.output[pos[0]][pos[1]])]
-        self.output[pos[0]][pos[1]][0].collapsed = True
     
     def _propagate(self, start: tuple, size: tuple):
         """

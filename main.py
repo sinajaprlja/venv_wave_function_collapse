@@ -188,20 +188,18 @@ class App(object):
                 if len(c) < 2:
                     c = f"0{c}"
                 color = f"#{c}{c}{c}"
-                #if wfc.output[x][y][0].collapsed:
-                #    color = "#44ff44"
                 pygame.draw.rect(display, color, (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 0, 8)
                 
                 # Draw number of patterns left
                 color = "#448844"
-                if wfc.output[x][y][0].collapsed:
+                if len(wfc.output[x][y]) == 1:
                     color = "#44ff44"
                 text = font.render(str(len(wfc.output[x][y])), 1, color)
                 rect = text.get_rect(center=(self._tile_x_offset(x)+self._tile_size//2, self._tile_y_offset(y) + self._tile_size//2))
                 display.blit(text, rect)
                 
                 # Draw pixeldata of collapsed tiles
-                if wfc.output[x][y][0].collapsed:
+                if len(wfc.output[x][y]) == 1:
                     _pixel_data = wfc.output[x][y][0].pixels
                     tile = pygame.Surface(_tile_size)
                     for i in range(wfc.output[0][0][0].width):
