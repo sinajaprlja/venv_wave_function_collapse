@@ -237,9 +237,6 @@ class App(object):
 
             self.draw()
             
-            if wfc._is_fully_collapsed():
-                print("Made it wohoo")
-
     def _get_tile_size(self):
         if (MAX_GRID_WIDTH / wfc.size[1]) * wfc.size[0] < MAX_GRID_HEIGHT:
             self._tile_size = MAX_GRID_WIDTH / wfc.size[1]
