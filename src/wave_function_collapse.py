@@ -11,7 +11,8 @@ import src.image_translator as image_translator
 import src.tile_model as tile_model
 import src.directions as directions
 
-import src.config as config
+from src.default_config import *
+from src.config import * 
 import src.utils as utils
 
 def progressbar(progress, maximum, text_front='', text_back='', filler_main='#', filler_back='-', bar_lenght=50):
@@ -26,6 +27,9 @@ def progressbar(progress, maximum, text_front='', text_back='', filler_main='#',
         filler_back:-----char used as background-filler ([###-----], [###     ], ([###.....]), ...)
         bar_lenght:-lenght of progressbar ([   <-"space between square brackets"->   ])
     '''
+    # progressbar only when debug-level is low enuf, else the progressbar will be split apart into multiple lines
+    if DEBUG_LEVEL > 1:
+        return
     percentage = round((progress / maximum) * bar_lenght)
     inside = f"{percentage*filler_main}{(bar_lenght - percentage) * filler_back}"
     output = "\r{}[{:{}s}]{}".format(text_front, inside, bar_lenght, text_back)
@@ -113,7 +117,7 @@ class WaveFunctionCollapse(object):
         entropy *= -1
 
         # Add some random noise for more natural distribution of collapse
-        entropy -= random.uniform(0, config.ENTROPY_NOISE)
+        entropy -= random.uniform(0, ENTROPY_NOISE)
         return entropy
     
 
@@ -158,7 +162,7 @@ class WaveFunctionCollapse(object):
         if len(self.output[pos[0]][pos[1]]):
             utils.verbose(f"Tile {pos[0]}|{pos[1]} is has already been collapsed", 2)
         
-        if config.USE_MAX_PROBABILITY:
+        if USE_MAX_PROBABILITY:
             maximum_probability = self._get_maximum_probability(pos)
             maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
             self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
@@ -215,17 +219,17 @@ class WaveFunctionCollapse(object):
         self._init_output(size)
         start = time.time()
         tries = 0
-        while tries < config.MAX_TRIES:
+        while tries < MAX_TRIES:
             try:
                 while not self._is_fully_collapsed():
                     self.next(size)
-                    if config.DEBUG_LEVEL >= 1:
+                    if DEBUG_LEVEL >= 1:
                         progressbar(self.number_of_collapsed_tiles, size[0]*size[1], bar_lenght=100, text_back=f" {time.time()-start:.2f} sec")
                 utils.verbose(f"Successfully generated bitmap", 1)
                 return True
             except UnsolvableException as e:       
                 tries += 1
-                print(f"\n{utils.timestring()} Unsolvable, try again [{tries}/{config.MAX_TRIES}]\n")
+                print(f"\n{utils.timestring()} Unsolvable, try again [{tries}/{MAX_TRIES}]\n")
                 self._init_output(size)
             except Exception as e:
                 raise e 

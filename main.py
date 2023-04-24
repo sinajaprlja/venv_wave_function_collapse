@@ -15,6 +15,7 @@ with open(os.devnull, 'w') as f:
 import src.image_translator
 import src.tile_model
 import src.wave_function_collapse
+import src.utils as utils
 
 COLOR_PALETTE = ["#2a2d34", "#a2a7a5", "#dae2df", "#157145", "#eea243"]
 
@@ -28,11 +29,17 @@ display_width, display_height = display.get_width(), display.get_height()
 pygame.display.set_caption("Wave Function Collapse Alogorithm")
 clock = pygame.time.Clock()
 
-input_image_path = "resources/images/example4x4.png"
-translated_image = src.image_translator.ImageTranslator.breakdown_image(input_image_path, 1)
+_input_data = [
+    ("resources/images/example4x4.png", 1),
+    ("resources/images/river32x32.png", 2),
+    ("resources/images/streets32x32.png", 8)
+]
+input_image_index = 0
+translated_image = src.image_translator.ImageTranslator.breakdown_image(*_input_data[input_image_index])
 tile_model = src.tile_model.ModelBuilder.build_model(translated_image, (2, 2))
 wfc = src.wave_function_collapse.WaveFunctionCollapse(tile_model)
-wfc._init_output((16, 16))
+OUTPUT_SIZE = (32, 32)
+wfc._init_output(OUTPUT_SIZE)
 
 
 
@@ -43,7 +50,7 @@ DISPLAY_BORDER = 4
 MAX_GRID_WIDTH = display_width // 3 * 2 - 2 * GRID_MARGIN
 MAX_GRID_HEIGHT = display_height - 2 * GRID_MARGIN
 
-INPUT_IMAGE = pygame.image.load(input_image_path).convert()
+INPUT_IMAGE = pygame.image.load(_input_data[input_image_index][0]).convert()
 INPUT_IMAGE_MAX_DISPLAY_SIZE = 256
 _factor = INPUT_IMAGE_MAX_DISPLAY_SIZE // max(INPUT_IMAGE.get_width(), INPUT_IMAGE.get_height())
 INPUT_IMAGE = pygame.transform.scale(INPUT_IMAGE, (INPUT_IMAGE.get_width() * _factor, INPUT_IMAGE.get_height() * _factor))
@@ -166,13 +173,14 @@ class App(object):
             pygame.draw.rect(display, COLOR_PALETTE[4], (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 4, 2)
     
     def _draw_legend(self) -> None:
-        font = pygame.font.SysFont("monospace", 24)
-        for x in range(wfc.size[0]):
+        font = pygame.font.SysFont("monospace", int(self._tile_size//3*2))
+        font.bold = True
+        for x in range(0, wfc.size[0], 4):
             text = font.render(str(x), 1, COLOR_PALETTE[1])
             rect = text.get_rect(center=(self._tile_x_offset(x)+self._tile_size//2, self._grid_y_offset - 24))
             display.blit(text, rect)
             
-        for y in range(wfc.size[1]):
+        for y in range(0, wfc.size[1], 4):
             text = font.render(str(y), 1, COLOR_PALETTE[1])
             rect = text.get_rect(center=(self._grid_x_offset - 24, self._tile_y_offset(y)+self._tile_size//2))
             display.blit(text, rect)
@@ -191,7 +199,7 @@ class App(object):
                 pygame.draw.rect(display, color, (self._tile_x_offset(x), self._tile_y_offset(y), self._tile_size, self._tile_size), 0, 8)
                 
                 # Draw number of patterns left
-                color = "#448844"
+                color = "#448844"   
                 if len(wfc.output[x][y]) == 1:
                     color = "#44ff44"
                 text = font.render(str(len(wfc.output[x][y])), 1, color)
@@ -213,7 +221,8 @@ class App(object):
                     tile = pygame.transform.scale(tile, (self._tile_size * wfc.output[0][0][0].width, self._tile_size * wfc.output[0][0][0].height))
                     display.blit(tile.subsurface((0, 0, self._tile_size, self._tile_size)), (self._tile_x_offset(x), self._tile_y_offset(y)))
 
-                
+    def update():
+        pass 
 
     def draw(self) -> None:
         display.fill("#111111")
@@ -222,7 +231,11 @@ class App(object):
         self._draw_grid_border()    
         self._draw_legend()
         self._draw_input_image()
-        self._draw_tile_status()
+        try:
+            self._draw_tile_status()
+        except IndexError as e:
+            utils.verbose("Unsolvable, re-init output", 1)
+            wfc._init_output(OUTPUT_SIZE)
         self._draw_hovered_tile(self._mouse_to_tile_index())
 
         pygame.display.update()
@@ -234,7 +247,7 @@ class App(object):
                 self._quit_handler(event)
             
             self._click_handler()
-
+            self.update()
             self.draw()
             
     def _get_tile_size(self):
