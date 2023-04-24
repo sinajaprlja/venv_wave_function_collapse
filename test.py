@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # Generate new images via wave function collapse, rebuild the image and save 
     for i in range(1):
-        wfc.generate_map((32, 32))
+        wfc.generate_map((50, 50))
         reversed_map = tile_model.ModelBuilder.reverse_patterns(wfc.output)
         rebuild_image = image_translator.ImageTranslator.rebuild_image(image_translator.TranslatedImage(ti.tile_map, reversed_map), f"{base_path}results/{filenames[file][0][:-4]}_result{i}.png")
 

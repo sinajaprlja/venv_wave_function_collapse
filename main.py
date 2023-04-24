@@ -38,7 +38,7 @@ input_image_index = 0
 translated_image = src.image_translator.ImageTranslator.breakdown_image(*_input_data[input_image_index])
 tile_model = src.tile_model.ModelBuilder.build_model(translated_image, (2, 2))
 wfc = src.wave_function_collapse.WaveFunctionCollapse(tile_model)
-OUTPUT_SIZE = (32, 32)
+OUTPUT_SIZE = (16, 16)
 wfc._init_output(OUTPUT_SIZE)
 
 
@@ -221,7 +221,7 @@ class App(object):
                     tile = pygame.transform.scale(tile, (self._tile_size * wfc.output[0][0][0].width, self._tile_size * wfc.output[0][0][0].height))
                     display.blit(tile.subsurface((0, 0, self._tile_size, self._tile_size)), (self._tile_x_offset(x), self._tile_y_offset(y)))
 
-    def update():
+    def update(self):
         pass 
 
     def draw(self) -> None:
@@ -241,6 +241,16 @@ class App(object):
         pygame.display.update()
 
     def menu(self) -> None:
+        #start_rect = pygame.Rect(display_width//3, display_height)
+        #settings_rectg = pygame.Rect()
+        while True:
+            for event in pygame.event.get():
+                self._quit_handler(event)
+            
+            if pygame.mouse.get_pressed()[0]:
+                self.main()
+
+    def main(self) -> None:
         self._get_tile_size()
         while True:
             for event in pygame.event.get():
@@ -249,7 +259,8 @@ class App(object):
             self._click_handler()
             self.update()
             self.draw()
-            
+        
+
     def _get_tile_size(self):
         if (MAX_GRID_WIDTH / wfc.size[1]) * wfc.size[0] < MAX_GRID_HEIGHT:
             self._tile_size = MAX_GRID_WIDTH / wfc.size[1]
