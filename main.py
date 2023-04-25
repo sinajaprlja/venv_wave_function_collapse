@@ -239,16 +239,51 @@ class App(object):
         self._draw_hovered_tile(self._mouse_to_tile_index())
 
         pygame.display.update()
-
+    
     def menu(self) -> None:
-        #start_rect = pygame.Rect(display_width//3, display_height)
-        #settings_rectg = pygame.Rect()
+        start_rect = pygame.Rect(display_width//6, display_height//4 - 50, display_width//3*2, display_height//4)
+        settings_rect = pygame.Rect(display_width//6, display_height//2 + 50, display_width//3*2, display_height//4)
+        
+        font = pygame.font.SysFont("monospace", display_height//5)
+        font.bold = True
+        
+        text_start = font.render("Menu", 1, COLOR_PALETTE[2])
+        text_settings = font.render("Settings", 1, COLOR_PALETTE[2])
+        
+        rect_start = text_start.get_rect(center=(display_width//2, display_height//4 + display_height//8 - 50))
+        rect_settings = text_settings.get_rect(center=(display_width//2, display_height//2 + display_height//8 + 50))
+        
+        _pressed = False
         while True:
+            display.fill(COLOR_PALETTE[0])
             for event in pygame.event.get():
                 self._quit_handler(event)
+
+            x, y = pygame.mouse.get_pos()
             
             if pygame.mouse.get_pressed()[0]:
-                self.main()
+                _pressed = True
+            
+            if not pygame.mouse.get_pressed()[0] and _pressed:
+                if start_rect.collidepoint(x, y):
+                    self.main()
+                if settings_rect.collidepoint(x, y):
+                    self.settings()
+
+            if start_rect.collidepoint(x, y):
+                pygame.draw.rect(display, COLOR_PALETTE[2], start_rect.inflate(16, 16), 0, 8)
+
+            if settings_rect.collidepoint(x, y):
+                pygame.draw.rect(display, COLOR_PALETTE[2], settings_rect.inflate(16, 16), 0, 8)
+
+            pygame.draw.rect(display, COLOR_PALETTE[4], start_rect, 0, 8)
+            pygame.draw.rect(display, COLOR_PALETTE[2], start_rect, 2, 8)
+            display.blit(text_start, rect_start)
+            pygame.draw.rect(display, COLOR_PALETTE[4], settings_rect, 0, 8)
+            pygame.draw.rect(display, COLOR_PALETTE[2], settings_rect, 2, 8)
+            display.blit(text_settings, rect_settings)
+            
+            pygame.display.update()
 
     def main(self) -> None:
         self._get_tile_size()
