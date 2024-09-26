@@ -7,11 +7,13 @@ import math
 import time
 import random
 
-import image_translator
-import tile_model
-import directions
-import config
-import utils
+import src.image_translator as image_translator
+import src.tile_model as tile_model
+import src.directions as directions
+
+from src.default_config import *
+from src.config import * 
+import src.utils as utils
 
 def progressbar(progress, maximum, text_front='', text_back='', filler_main='#', filler_back='-', bar_lenght=50):
     '''
@@ -25,6 +27,9 @@ def progressbar(progress, maximum, text_front='', text_back='', filler_main='#',
         filler_back:-----char used as background-filler ([###-----], [###     ], ([###.....]), ...)
         bar_lenght:-lenght of progressbar ([   <-"space between square brackets"->   ])
     '''
+    # progressbar only when debug-level is low enuf, else the progressbar will be split apart into multiple lines
+    if DEBUG_LEVEL > 1:
+        return
     percentage = round((progress / maximum) * bar_lenght)
     inside = f"{percentage*filler_main}{(bar_lenght - percentage) * filler_back}"
     output = "\r{}[{:{}s}]{}".format(text_front, inside, bar_lenght, text_back)
@@ -56,6 +61,11 @@ class WaveFunctionCollapse(object):
         if self._output is None:
             raise NotInitializedException("output")
         return self._output
+    
+    @property
+    def size(self) -> tuple:
+        "returns output dimensions as (rows, columns)"
+        return (0, 0) if self._output is None else (len(self._output), len(self._output[0]))
 
     @property
     def number_of_collapsed_tiles(self):
@@ -79,8 +89,7 @@ class WaveFunctionCollapse(object):
                 elif len(tile) == 0:
                     raise UnsolvableException()
         return True
-
-
+    
     def _get_possible_patterns(self, pos: tuple) -> list:
         """
         Returns all valid patters at specific position
@@ -97,7 +106,7 @@ class WaveFunctionCollapse(object):
         """
         utils.verbose(f"Calculate entropy at {pos}", 3)
         entropy = 0
-        if len(self.output[pos[0]][pos[1]]) == 1 and self.output[pos[0]][pos[1]][0].collapsed:
+        if len(self.output[pos[0]][pos[1]]) == 1:
             return 9999
         
         if self.output[pos[0]][pos[1]] == []:
@@ -108,7 +117,7 @@ class WaveFunctionCollapse(object):
         entropy *= -1
 
         # Add some random noise for more natural distribution of collapse
-        entropy -= random.uniform(0, config.ENTROPY_NOISE)
+        entropy -= random.uniform(0, ENTROPY_NOISE)
         return entropy
     
 
@@ -142,20 +151,24 @@ class WaveFunctionCollapse(object):
                 maximum_probability = probability
         return maximum_probability
 
-    def _collapse(self, pos):
+    def _collapse(self, pos: tuple) -> None:
         """
         Collapse the tile at a specific position by taking the most probable patterns
         and randomly choose one.
         """
-        utils.verbose(f"Collapsing {pos}", 3)
-        if config.USE_MAX_PROBABILITY:
+        utils.verbose(f"Collapsing {pos}", 2)
+
+        # This only occures when tiles are manually collapsed, the wfc-algorithms itself does not touch collapsed tiles in the first place
+        if len(self.output[pos[0]][pos[1]]):
+            utils.verbose(f"Tile {pos[0]}|{pos[1]} is has already been collapsed", 2)
+        
+        if USE_MAX_PROBABILITY:
             maximum_probability = self._get_maximum_probability(pos)
             maximum_probability_patterns = [p for p in self.output[pos[0]][pos[1]] if p.probability >= maximum_probability]
             self.output[pos[0]][pos[1]] = [random.choice(maximum_probability_patterns)]
         else:
             self.output[pos[0]][pos[1]] = [random.choice(self.output[pos[0]][pos[1]])]
-        self.output[pos[0]][pos[1]][0].collapsed = True
-
+    
     def _propagate(self, start: tuple, size: tuple):
         """
         """
@@ -177,11 +190,11 @@ class WaveFunctionCollapse(object):
                         elif adjacent_pos not in stack:
                             stack.append(adjacent_pos)
                     self.output[adjacent_pos[0]][adjacent_pos[1]] = tmp 
-                        
+                
                 
     def next(self, size: int) -> None:
         """
-        Builds the next step of the output by collapsing and propagating threw every change
+        Builds the next step of the output by collapsing and propagating through every change
         """
         utils.verbose("Starting iteration of collapsing/propagating", 2)
         solution = []
@@ -206,16 +219,17 @@ class WaveFunctionCollapse(object):
         self._init_output(size)
         start = time.time()
         tries = 0
-        while tries < config.MAX_TRIES:
+        while tries < MAX_TRIES:
             try:
                 while not self._is_fully_collapsed():
                     self.next(size)
-                    if config.DEBUG_LEVEL >= 1:
+                    if DEBUG_LEVEL >= 1:
                         progressbar(self.number_of_collapsed_tiles, size[0]*size[1], bar_lenght=100, text_back=f" {time.time()-start:.2f} sec")
+                utils.verbose(f"Successfully generated bitmap", 1)
                 return True
             except UnsolvableException as e:       
                 tries += 1
-                print(f"\n{utils.timestring()} Unsolvable, try again [{tries}/{config.MAX_TRIES}]\n")
+                print(f"\n{utils.timestring()} Unsolvable, try again [{tries}/{MAX_TRIES}]\n")
                 self._init_output(size)
             except Exception as e:
                 raise e 
@@ -244,24 +258,26 @@ class WaveFunctionCollapse(object):
         return result
 
 if __name__ == "__main__":
+    
+    # Example files and their tile size
     filenames = [
-        "../resources/images/example4x4.png",
-        "../resources/images/river32x32.png",    
+        ["../resources/images/example4x4.png", 1],
+        ["../resources/images/river32x32.png", 1],   
+        ["../resources/images/streets32x32.png", 8]
     ]
-    filename = filenames[0]
+    file = 0
+    
+    # Translate the input image
+    ti = image_translator.ImageTranslator.breakdown_image(*filenames[file])
 
-    it = image_translator.ImageTranslator()
-    it.breakdown_image(filename, 1)
-
-    tm = tile_model.TileModel(it)
-    tm.build_patterns((2, 2))
-    tm.build_rules()
-
+    # Build a model out of the input image
+    tm = tile_model.ModelBuilder.build_model(ti, (2, 2))
+    
+    # Initialize the wave function collapse algorithm
     wfc = WaveFunctionCollapse(tm)
     
+    # Generate new images via wave function collapse, rebuild the image and save 
     for i in range(1):
-        wfc.generate_map((32, 16))
-
-        reversed_map = tm.reverse_patterns(wfc.output)
-
-        rebuild_image = it.rebuild_image(reversed_map, f"{filename[:-3]}result{i}.png")
+        wfc.generate_map((32, 32))
+        reversed_map = tile_model.ModelBuilder.reverse_patterns(wfc.output)
+        rebuild_image = image_translator.ImageTranslator.rebuild_image(image_translator.TranslatedImage(ti.tile_map, reversed_map), f"{filenames[file][0][:-4]}_result{i}.png")

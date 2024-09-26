@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-import config
+import src.config as config
 
 import time
 
